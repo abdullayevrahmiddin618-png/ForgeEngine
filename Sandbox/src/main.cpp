@@ -4,20 +4,26 @@
 class SandboxApp : public Forge::Application {
 public:
     SandboxApp()
-        : Forge::Application({ "ForgeEngine - Sandbox", 1280, 720 }) {}
+        : Forge::Application({ "ForgeEngine - 3D Sandbox", 1280, 720 }),
+          m_Camera(45.0f, 1280.0f / 720.0f, 0.1f, 100.0f) {}
 
 protected:
     void OnInit() override {
-        FE_INFO("Sandbox: OnInit()");
+        FE_INFO("Sandbox: 3D Kub yuklanmoqda...");
 
         const std::string vertexSrc = R"(
             #version 330 core
             layout (location = 0) in vec3 a_Position;
             layout (location = 1) in vec3 a_Color;
+
+            uniform mat4 u_ViewProjection;
+            uniform mat4 u_Model;
+
             out vec3 v_Color;
+
             void main() {
                 v_Color = a_Color;
-                gl_Position = vec4(a_Position, 1.0);
+                gl_Position = u_ViewProjection * u_Model * vec4(a_Position, 1.0);
             }
         )";
 
@@ -25,6 +31,7 @@ protected:
             #version 330 core
             in vec3 v_Color;
             out vec4 FragColor;
+
             void main() {
                 FragColor = vec4(v_Color, 1.0);
             }
@@ -32,34 +39,97 @@ protected:
 
         m_Shader = std::make_unique<Forge::Shader>(vertexSrc, fragmentSrc);
 
-        m_Triangle = std::make_unique<Forge::VertexArray>(std::vector<Forge::Vertex>{
-            { -0.5f, -0.5f, 0.0f,  1.0f, 0.2f, 0.2f },
-            {  0.5f, -0.5f, 0.0f,  0.2f, 1.0f, 0.2f },
-            {  0.0f,  0.5f, 0.0f,  0.2f, 0.4f, 1.0f }
+        // 3D Kub (6 tomon x 2 uchburchak = 36 ta nuqta)
+        m_Cube = std::make_unique<Forge::VertexArray>(std::vector<Forge::Vertex>{
+            // Old tomon (Qizil)
+            { -0.5f, -0.5f,  0.5f,  0.9f, 0.2f, 0.2f },
+            {  0.5f, -0.5f,  0.5f,  0.9f, 0.2f, 0.2f },
+            {  0.5f,  0.5f,  0.5f,  0.9f, 0.2f, 0.2f },
+            {  0.5f,  0.5f,  0.5f,  0.9f, 0.2f, 0.2f },
+            { -0.5f,  0.5f,  0.5f,  0.9f, 0.2f, 0.2f },
+            { -0.5f, -0.5f,  0.5f,  0.9f, 0.2f, 0.2f },
+
+            // Orqa tomon (Yashil)
+            { -0.5f, -0.5f, -0.5f,  0.2f, 0.9f, 0.2f },
+            {  0.5f, -0.5f, -0.5f,  0.2f, 0.9f, 0.2f },
+            {  0.5f,  0.5f, -0.5f,  0.2f, 0.9f, 0.2f },
+            {  0.5f,  0.5f, -0.5f,  0.2f, 0.9f, 0.2f },
+            { -0.5f,  0.5f, -0.5f,  0.2f, 0.9f, 0.2f },
+            { -0.5f, -0.5f, -0.5f,  0.2f, 0.9f, 0.2f },
+
+            // Chap tomon (Ko'k)
+            { -0.5f,  0.5f,  0.5f,  0.2f, 0.4f, 0.9f },
+            { -0.5f,  0.5f, -0.5f,  0.2f, 0.4f, 0.9f },
+            { -0.5f, -0.5f, -0.5f,  0.2f, 0.4f, 0.9f },
+            { -0.5f, -0.5f, -0.5f,  0.2f, 0.4f, 0.9f },
+            { -0.5f, -0.5f,  0.5f,  0.2f, 0.4f, 0.9f },
+            { -0.5f,  0.5f,  0.5f,  0.2f, 0.4f, 0.9f },
+
+            // O'ng tomon (Sariq)
+            {  0.5f,  0.5f,  0.5f,  0.9f, 0.9f, 0.2f },
+            {  0.5f,  0.5f, -0.5f,  0.9f, 0.9f, 0.2f },
+            {  0.5f, -0.5f, -0.5f,  0.9f, 0.9f, 0.2f },
+            {  0.5f, -0.5f, -0.5f,  0.9f, 0.9f, 0.2f },
+            {  0.5f, -0.5f,  0.5f,  0.9f, 0.9f, 0.2f },
+            {  0.5f,  0.5f,  0.5f,  0.9f, 0.9f, 0.2f },
+
+            // Tepa tomon (Binafsha)
+            { -0.5f,  0.5f, -0.5f,  0.7f, 0.2f, 0.9f },
+            {  0.5f,  0.5f, -0.5f,  0.7f, 0.2f, 0.9f },
+            {  0.5f,  0.5f,  0.5f,  0.7f, 0.2f, 0.9f },
+            {  0.5f,  0.5f,  0.5f,  0.7f, 0.2f, 0.9f },
+            { -0.5f,  0.5f,  0.5f,  0.7f, 0.2f, 0.9f },
+            { -0.5f,  0.5f, -0.5f,  0.7f, 0.2f, 0.9f },
+
+            // Past tomon (Moviy)
+            { -0.5f, -0.5f, -0.5f,  0.2f, 0.9f, 0.9f },
+            {  0.5f, -0.5f, -0.5f,  0.2f, 0.9f, 0.9f },
+            {  0.5f, -0.5f,  0.5f,  0.2f, 0.9f, 0.9f },
+            {  0.5f, -0.5f,  0.5f,  0.2f, 0.9f, 0.9f },
+            { -0.5f, -0.5f,  0.5f,  0.2f, 0.9f, 0.9f },
+            { -0.5f, -0.5f, -0.5f,  0.2f, 0.9f, 0.9f }
         });
     }
 
     void OnUpdate(float dt) override {
-        (void)dt;
-
         if (Forge::Input::IsKeyPressed(Forge::Key::Escape)) {
             Close();
         }
 
-        Forge::Renderer::SetClearColor(0.1f, 0.12f, 0.15f, 1.0f);
+        // Kamera harakati (WASD + QE)
+        float speed = 2.5f * dt;
+        if (Forge::Input::IsKeyPressed(Forge::Key::W)) m_Camera.Move({ 0.0f,  0.0f, -speed });
+        if (Forge::Input::IsKeyPressed(Forge::Key::S)) m_Camera.Move({ 0.0f,  0.0f,  speed });
+        if (Forge::Input::IsKeyPressed(Forge::Key::A)) m_Camera.Move({ -speed, 0.0f,  0.0f });
+        if (Forge::Input::IsKeyPressed(Forge::Key::D)) m_Camera.Move({  speed, 0.0f,  0.0f });
+        if (Forge::Input::IsKeyPressed(Forge::Key::E)) m_Camera.Move({ 0.0f,  speed,  0.0f });
+        if (Forge::Input::IsKeyPressed(Forge::Key::Q)) m_Camera.Move({ 0.0f, -speed,  0.0f });
+
+        // Kubni aylantirish
+        m_Rotation += 50.0f * dt;
+        glm::mat4 model = glm::rotate(glm::mat4(1.0f), glm::radians(m_Rotation), glm::vec3(0.5f, 1.0f, 0.0f));
+
+        Forge::Renderer::SetClearColor(0.08f, 0.1f, 0.13f, 1.0f);
         Forge::Renderer::Clear();
-        Forge::Renderer::Draw(*m_Triangle, *m_Shader);
+
+        m_Shader->Bind();
+        m_Shader->SetMat4("u_ViewProjection", m_Camera.GetViewProjectionMatrix());
+        m_Shader->SetMat4("u_Model", model);
+
+        Forge::Renderer::Draw(*m_Cube, *m_Shader);
     }
 
     void OnShutdown() override {
-        m_Triangle.reset();
+        m_Cube.reset();
         m_Shader.reset();
         FE_INFO("Sandbox: OnShutdown()");
     }
 
 private:
+    Forge::Camera m_Camera;
     std::unique_ptr<Forge::Shader> m_Shader;
-    std::unique_ptr<Forge::VertexArray> m_Triangle;
+    std::unique_ptr<Forge::VertexArray> m_Cube;
+    float m_Rotation = 0.0f;
 };
 
 int main() {
