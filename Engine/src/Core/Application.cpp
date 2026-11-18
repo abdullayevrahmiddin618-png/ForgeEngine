@@ -1,5 +1,6 @@
 #include "Forge/Core/Application.h"
 #include "Forge/Core/Log.h"
+#include "Forge/Renderer/Renderer.h"
 
 #include <chrono>
 
@@ -16,6 +17,7 @@ namespace Forge {
         FE_INFO("ForgeEngine ishga tushdi.");
 
         m_Window = std::make_unique<Window>(m_WindowProps);
+        Renderer::Init();
         OnInit();
 
         using Clock = std::chrono::steady_clock;
