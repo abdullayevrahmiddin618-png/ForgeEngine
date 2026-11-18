@@ -1,0 +1,65 @@
+#include "Forge/Renderer/Shader.h"
+#include "Forge/Core/Log.h"
+
+#include <glad/glad.h>
+#include <vector>
+
+namespace Forge {
+
+    Shader::Shader(const std::string& vertexSrc, const std::string& fragmentSrc) {
+        uint32_t vs = Compile(GL_VERTEX_SHADER, vertexSrc);
+        uint32_t fs = Compile(GL_FRAGMENT_SHADER, fragmentSrc);
+
+        m_RendererID = glCreateProgram();
+        glAttachShader(m_RendererID, vs);
+        glAttachShader(m_RendererID, fs);
+        glLinkProgram(m_RendererID);
+
+        int success = 0;
+        glGetProgramiv(m_RendererID, GL_LINK_STATUS, &success);
+        if (!success) {
+            int length = 0;
+            glGetProgramiv(m_RendererID, GL_INFO_LOG_LENGTH, &length);
+            std::vector<char> infoLog(length);
+            glGetProgramInfoLog(m_RendererID, length, &length, infoLog.data());
+            FE_ERROR(std::string("Shader link xatosi: ") + infoLog.data());
+        }
+
+        glDeleteShader(vs);
+        glDeleteShader(fs);
+    }
+
+    Shader::~Shader() {
+        if (m_RendererID) {
+            glDeleteProgram(m_RendererID);
+        }
+    }
+
+    void Shader::Bind() const {
+        glUseProgram(m_RendererID);
+    }
+
+    void Shader::Unbind() const {
+        glUseProgram(0);
+    }
+
+    uint32_t Shader::Compile(uint32_t type, const std::string& source) {
+        uint32_t id = glCreateShader(type);
+        const char* src = source.c_str();
+        glShaderSource(id, 1, &src, nullptr);
+        glCompileShader(id);
+
+        int success = 0;
+        glGetShaderiv(id, GL_COMPILE_STATUS, &success);
+        if (!success) {
+            int length = 0;
+            glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
+            std::vector<char> infoLog(length);
+            glGetShaderInfoLog(id, length, &length, infoLog.data());
+            FE_ERROR(std::string("Shader kompilyatsiya xatosi: ") + infoLog.data());
+        }
+
+        return id;
+    }
+
+}
