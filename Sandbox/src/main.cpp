@@ -11,7 +11,8 @@ protected:
     }
 
     void OnUpdate() override {
-        // Har kadrda ishlaydi
+        Forge::Renderer::SetClearColor(0.1f, 0.12f, 0.15f, 1.0f);
+        Forge::Renderer::Clear();
     }
 
     void OnShutdown() override {
