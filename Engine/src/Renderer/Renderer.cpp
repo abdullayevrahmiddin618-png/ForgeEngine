@@ -4,6 +4,10 @@
 
 namespace Forge {
 
+    void Renderer::Init() {
+        glEnable(GL_DEPTH_TEST);
+    }
+
     void Renderer::SetClearColor(float r, float g, float b, float a) {
         glClearColor(r, g, b, a);
     }
