@@ -12,4 +12,10 @@ namespace Forge {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
+    void Renderer::Draw(const VertexArray& vertexArray, const Shader& shader) {
+        shader.Bind();
+        vertexArray.Bind();
+        glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(vertexArray.GetVertexCount()));
+    }
+
 }
