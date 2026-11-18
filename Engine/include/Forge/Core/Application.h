@@ -11,19 +11,22 @@ namespace Forge {
         virtual ~Application() = default;
 
         void Run();
+        void Close() { m_Running = false; }
+
+        Window& GetWindow() { return *m_Window; }
+        static Application& Get() { return *s_Instance; }
 
     protected:
         virtual void OnInit() {}
-        virtual void OnUpdate() {}
+        virtual void OnUpdate(float dt) { (void)dt; }
         virtual void OnShutdown() {}
-
-        Window& GetWindow() { return *m_Window; }
 
         bool m_Running = true;
 
     private:
         WindowProps m_WindowProps;
         std::unique_ptr<Window> m_Window;
+        static Application* s_Instance;
     };
 
 }
