@@ -24,6 +24,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glad)
 
+# GLM (3D Matematika)
+FetchContent_Declare(
+    glm
+    GIT_REPOSITORY https://github.com/g-truc/glm.git
+    GIT_TAG 1.0.1
+)
+FetchContent_MakeAvailable(glm)
+
 add_library(ForgeEngine STATIC
     src/Core/Log.cpp
     src/Core/Window.cpp
@@ -32,13 +40,14 @@ add_library(ForgeEngine STATIC
     src/Renderer/Renderer.cpp
     src/Renderer/Shader.cpp
     src/Renderer/VertexArray.cpp
+    src/Renderer/Camera.cpp
 )
 
 target_include_directories(ForgeEngine PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_link_libraries(ForgeEngine PRIVATE
-    glfw
-    glad
+target_link_libraries(ForgeEngine
+    PUBLIC glm::glm
+    PRIVATE glfw glad
 )
