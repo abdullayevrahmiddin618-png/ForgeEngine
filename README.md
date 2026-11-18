@@ -28,11 +28,11 @@ Designed with clean, modular architecture, ForgeEngine aims to give developers f
 ## 🗺️ Roadmap
 
 ### Phase 1 — Foundation (Current)
-- [ ] CMake project setup (`Engine` library + `Sandbox` app)
-- [ ] Core Application loop & Entry point
-- [ ] Logging system
-- [ ] Window management (GLFW) & Event system
-- [ ] OpenGL context initialization (GLAD)
+- [X] CMake project setup (`Engine` library + `Sandbox` app)
+- [X] Core Application loop & Entry point
+- [X] Logging system
+- [X] Window management (GLFW) & Event system
+- [X] OpenGL context initialization (GLAD)
 
 ### Phase 2 — Rendering
 - [ ] Shader & Buffer abstraction (VBO, VAO, IBO)
