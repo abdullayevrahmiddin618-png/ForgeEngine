@@ -33,14 +33,19 @@ protected:
         m_Shader = std::make_unique<Forge::Shader>(vertexSrc, fragmentSrc);
 
         m_Triangle = std::make_unique<Forge::VertexArray>(std::vector<Forge::Vertex>{
-            //  x,     y,    z,     r,    g,    b
-            { -0.5f, -0.5f, 0.0f,  1.0f, 0.2f, 0.2f }, // Qizil
-            {  0.5f, -0.5f, 0.0f,  0.2f, 1.0f, 0.2f }, // Yashil
-            {  0.0f,  0.5f, 0.0f,  0.2f, 0.4f, 1.0f }  // Ko'k
+            { -0.5f, -0.5f, 0.0f,  1.0f, 0.2f, 0.2f },
+            {  0.5f, -0.5f, 0.0f,  0.2f, 1.0f, 0.2f },
+            {  0.0f,  0.5f, 0.0f,  0.2f, 0.4f, 1.0f }
         });
     }
 
-    void OnUpdate() override {
+    void OnUpdate(float dt) override {
+        (void)dt;
+
+        if (Forge::Input::IsKeyPressed(Forge::Key::Escape)) {
+            Close();
+        }
+
         Forge::Renderer::SetClearColor(0.1f, 0.12f, 0.15f, 1.0f);
         Forge::Renderer::Clear();
         Forge::Renderer::Draw(*m_Triangle, *m_Shader);
