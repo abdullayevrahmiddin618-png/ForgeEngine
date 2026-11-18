@@ -1,73 +1,67 @@
-ForgeEngine
+# ForgeEngine
 
-An open-source 2D & 3D Game Engine built from scratch with C++.
+![C++20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)
+![CMake](https://img.shields.io/badge/Build-CMake-064F8C.svg)
+![OpenGL](https://img.shields.io/badge/Graphics-OpenGL-5586A4.svg)
+![License](https://img.shields.io/badge/License-MIT-green.svg)
 
-ForgeEngine is a cross-platform game engine project designed to provide developers with the tools to create 2D and 3D games through a powerful, flexible, and extensible development environment.
+**ForgeEngine** is an open-source 2D & 3D Game Engine built from scratch in modern C++20.
 
-🚀 Vision
-
-Our goal is to build an independent game engine that gives developers complete control over their games, from simple 2D experiences to complex 3D worlds.
-
-✨ Planned Features
-
-- [ ] Core Engine Architecture
-- [ ] Window Management
-- [ ] Input System
-- [ ] 2D Rendering
-- [ ] 3D Rendering
-- [ ] Scene Management
-- [ ] Entity Component System (ECS)
-- [ ] Physics Engine
-- [ ] Audio System
-- [ ] Asset Management
-- [ ] Material Editor
-- [ ] Visual Scripting
-- [ ] Integrated Game Editor
-- [ ] Windows Game Export
-
-🛠️ Technology Stack
-
-Technology| Purpose
-C++20| Core programming language
-CMake| Build system
-OpenGL| Initial graphics API
-Vulkan| Future graphics API
-GLFW| Window and input management
-Dear ImGui| Editor interface
-
-📁 Project Structure
-
-ForgeEngine/
-├── Engine/
-│   ├── Core/
-│   ├── Renderer/
-│   ├── Platform/
-│   ├── Physics/
-│   ├── Audio/
-│   ├── Scene/
-│   ├── Input/
-│   └── Editor/
-├── Sandbox/
-├── Assets/
-├── Tests/
-├── CMakeLists.txt
-├── README.md
-└── LICENSE
-
-🎯 Project Status
-
-Early Development — Version 0.1.0
-
-ForgeEngine is currently in its initial development stage. Features and architecture are subject to change.
-
-🤝 Contributing
-
-Contributions, ideas, bug reports, and suggestions are welcome.
-
-📜 License
-
-This project is licensed under the MIT License.
+Designed with clean, modular architecture, ForgeEngine aims to give developers full control over rendering, scenes, physics, and tooling — starting from a lightweight core and scaling up to a full game development environment.
 
 ---
 
-ForgeEngine — Create Without Limits.
+## 🛠️ Tech Stack
+
+| Technology | Purpose |
+| :--- | :--- |
+| **C++20** | Core engine language |
+| **CMake** | Cross-platform build system |
+| **OpenGL** | Initial graphics API (Vulkan planned) |
+| **GLFW** | Window creation & input handling |
+| **GLAD** | OpenGL function loader |
+| **GLM** | 3D/2D math library |
+| **Dear ImGui** | Integrated editor & debug UI |
+
+---
+
+## 🗺️ Roadmap
+
+### Phase 1 — Foundation (Current)
+- [ ] CMake project setup (`Engine` library + `Sandbox` app)
+- [ ] Core Application loop & Entry point
+- [ ] Logging system
+- [ ] Window management (GLFW) & Event system
+- [ ] OpenGL context initialization (GLAD)
+
+### Phase 2 — Rendering
+- [ ] Shader & Buffer abstraction (VBO, VAO, IBO)
+- [ ] 2D Renderer (Sprites, Textures, Batch Rendering)
+- [ ] Camera system (Orthographic & Perspective)
+- [ ] 3D Renderer (Meshes, Lighting, Materials)
+
+### Phase 3 — Engine Systems
+- [ ] Entity Component System (ECS)
+- [ ] Scene management & Serialization
+- [ ] Asset manager
+- [ ] Physics & Audio integration
+
+### Phase 4 — Editor & Export
+- [ ] Dear ImGui docking editor (Viewport, Hierarchy, Inspector)
+- [ ] Project & Build export tools
+
+---
+
+## 📁 Project Structure
+
+```text
+ForgeEngine/
+├── Engine/             # Core engine static library
+│   ├── include/        # Public headers
+│   └── src/            # Engine source files
+├── Sandbox/            # Test application / Game project
+├── Assets/             # Shaders, textures, models
+├── CMakeLists.txt      # Root CMake configuration
+├── .gitignore
+├── LICENSE
+└── README.md
