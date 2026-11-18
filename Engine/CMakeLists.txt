@@ -28,6 +28,7 @@ add_library(ForgeEngine STATIC
     src/Core/Log.cpp
     src/Core/Window.cpp
     src/Core/Application.cpp
+    src/Input/Input.cpp
     src/Renderer/Renderer.cpp
     src/Renderer/Shader.cpp
     src/Renderer/VertexArray.cpp
