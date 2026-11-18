@@ -1,6 +1,7 @@
 #include "Forge/Core/Window.h"
 #include "Forge/Core/Log.h"
 
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 namespace Forge {
@@ -46,9 +47,24 @@ namespace Forge {
         }
 
         glfwMakeContextCurrent(m_Window);
+
+        if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress))) {
+            FE_ERROR("GLAD yuklanmadi!");
+            glfwDestroyWindow(m_Window);
+            m_Window = nullptr;
+            return;
+        }
+
         glfwSwapInterval(1); // VSync yoqilgan
 
+        glViewport(0, 0, static_cast<int>(m_Data.Width), static_cast<int>(m_Data.Height));
+        glfwSetFramebufferSizeCallback(m_Window, [](GLFWwindow*, int width, int height) {
+            glViewport(0, 0, width, height);
+        });
+
         FE_INFO("Oyna yaratildi: " + m_Data.Title);
+        FE_INFO(std::string("OpenGL GPU: ") + reinterpret_cast<const char*>(glGetString(GL_RENDERER)));
+        FE_INFO(std::string("OpenGL Versiya: ") + reinterpret_cast<const char*>(glGetString(GL_VERSION)));
     }
 
     void Window::Shutdown() {
