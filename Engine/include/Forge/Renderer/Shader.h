@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <string>
+#include <glm/glm.hpp>
 
 namespace Forge {
 
@@ -15,6 +16,8 @@ namespace Forge {
 
         void Bind() const;
         void Unbind() const;
+
+        void SetMat4(const std::string& name, const glm::mat4& matrix) const;
 
     private:
         uint32_t Compile(uint32_t type, const std::string& source);
