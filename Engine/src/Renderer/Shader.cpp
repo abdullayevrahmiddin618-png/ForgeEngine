@@ -2,6 +2,7 @@
 #include "Forge/Core/Log.h"
 
 #include <glad/glad.h>
+#include <glm/gtc/type_ptr.hpp>
 #include <vector>
 
 namespace Forge {
@@ -41,6 +42,11 @@ namespace Forge {
 
     void Shader::Unbind() const {
         glUseProgram(0);
+    }
+
+    void Shader::SetMat4(const std::string& name, const glm::mat4& matrix) const {
+        int location = glGetUniformLocation(m_RendererID, name.c_str());
+        glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
     }
 
     uint32_t Shader::Compile(uint32_t type, const std::string& source) {
