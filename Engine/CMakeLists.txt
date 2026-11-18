@@ -29,6 +29,8 @@ add_library(ForgeEngine STATIC
     src/Core/Window.cpp
     src/Core/Application.cpp
     src/Renderer/Renderer.cpp
+    src/Renderer/Shader.cpp
+    src/Renderer/VertexArray.cpp
 )
 
 target_include_directories(ForgeEngine PUBLIC
