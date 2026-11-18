@@ -1,0 +1,34 @@
+# Build directories
+build/
+out/
+bin/
+bin-int/
+
+# Visual Studio / MSVC
+.vs/
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.pdb
+*.ilk
+*.obj
+*.exe
+*.lib
+*.dll
+
+# VS Code & CLion
+.vscode/
+.idea/
+.cache/
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
+
+# OS files
+.DS_Store
+Thumbs.db
