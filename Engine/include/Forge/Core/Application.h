@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Forge/Core/Window.h"
+#include "Forge/UI/ImGuiLayer.h"
 #include <memory>
 
 namespace Forge {
@@ -19,6 +20,7 @@ namespace Forge {
     protected:
         virtual void OnInit() {}
         virtual void OnUpdate(float dt) { (void)dt; }
+        virtual void OnImGuiRender() {}
         virtual void OnShutdown() {}
 
         bool m_Running = true;
@@ -26,6 +28,7 @@ namespace Forge {
     private:
         WindowProps m_WindowProps;
         std::unique_ptr<Window> m_Window;
+        std::unique_ptr<ImGuiLayer> m_ImGuiLayer;
         static Application* s_Instance;
     };
 
