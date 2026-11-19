@@ -2,6 +2,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <imgui.h>
 
 #include "Forge/Core/Log.h"
 #include "Forge/Core/Window.h"
