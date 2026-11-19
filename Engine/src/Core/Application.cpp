@@ -18,6 +18,10 @@ namespace Forge {
 
         m_Window = std::make_unique<Window>(m_WindowProps);
         Renderer::Init();
+
+        m_ImGuiLayer = std::make_unique<ImGuiLayer>();
+        m_ImGuiLayer->Init(m_Window->GetNativeWindow());
+
         OnInit();
 
         using Clock = std::chrono::steady_clock;
@@ -29,10 +33,17 @@ namespace Forge {
             lastTime = currentTime;
 
             OnUpdate(dt);
+
+            m_ImGuiLayer->Begin();
+            OnImGuiRender();
+            m_ImGuiLayer->End();
+
             m_Window->OnUpdate();
         }
 
         OnShutdown();
+        m_ImGuiLayer->Shutdown();
+        m_ImGuiLayer.reset();
         m_Window.reset();
 
         FE_INFO("ForgeEngine yopildi.");
