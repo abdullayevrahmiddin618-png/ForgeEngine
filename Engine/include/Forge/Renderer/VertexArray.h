@@ -8,6 +8,7 @@ namespace Forge {
     struct Vertex {
         float x, y, z;
         float r, g, b;
+        float nx, ny, nz;
     };
 
     class VertexArray {
