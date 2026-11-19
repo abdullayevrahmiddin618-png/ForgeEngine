@@ -10,8 +10,9 @@ public:
 
 protected:
     void OnInit() override {
-        FE_INFO("Sandbox: Scene va 3D Editor yuklanmoqda...");
+        FE_INFO("Sandbox: Scene va Free-look 3D Editor yuklanmoqda...");
         m_Camera.SetPosition({ 0.0f, 1.5f, 5.0f });
+        m_Camera.SetRotation(-90.0f, -15.0f);
 
         const std::string vertexSrc = R"(
             #version 330 core
@@ -116,7 +117,6 @@ protected:
             { -0.5f, -0.5f, -0.5f,  1, 1, 1,   0.0f, -1.0f,  0.0f }
         });
 
-        // Boshlang'ich sahna obyektlari
         auto& floor = m_Scene.CreateEntity("Floor");
         floor.TransformData.Position = { 0.0f, -0.75f, 0.0f };
         floor.TransformData.Scale    = { 6.0f, 0.2f, 6.0f };
@@ -139,15 +139,36 @@ protected:
             Close();
         }
 
-        float speed = 3.0f * dt;
-        if (Forge::Input::IsKeyPressed(Forge::Key::W)) m_Camera.Move({ 0.0f,  0.0f, -speed });
-        if (Forge::Input::IsKeyPressed(Forge::Key::S)) m_Camera.Move({ 0.0f,  0.0f,  speed });
-        if (Forge::Input::IsKeyPressed(Forge::Key::A)) m_Camera.Move({ -speed, 0.0f,  0.0f });
-        if (Forge::Input::IsKeyPressed(Forge::Key::D)) m_Camera.Move({  speed, 0.0f,  0.0f });
-        if (Forge::Input::IsKeyPressed(Forge::Key::E)) m_Camera.Move({ 0.0f,  speed,  0.0f });
-        if (Forge::Input::IsKeyPressed(Forge::Key::Q)) m_Camera.Move({ 0.0f, -speed,  0.0f });
+        // Sichqoncha o'ng tugmasi bilan Free-look kamera burilishi
+        auto [mouseX, mouseY] = Forge::Input::GetMousePosition();
+        if (Forge::Input::IsMouseButtonPressed(Forge::Mouse::Right) && !ImGui::GetIO().WantCaptureMouse) {
+            if (!m_IsLooking) {
+                m_LastMouseX = mouseX;
+                m_LastMouseY = mouseY;
+                m_IsLooking = true;
+            }
+            float dx = mouseX - m_LastMouseX;
+            float dy = m_LastMouseY - mouseY; // Y o'qi pastga qaragan
+            m_LastMouseX = mouseX;
+            m_LastMouseY = mouseY;
 
-        // 1-kubni (Main Cube) sekin aylantirish
+            m_Camera.Rotate(dx * m_MouseSensitivity, dy * m_MouseSensitivity);
+        } else {
+            m_IsLooking = false;
+        }
+
+        // Kamera qarab turgan yo'nalishda uchish (Shift bosilsa 2x tezroq)
+        float speed = m_CameraSpeed * dt;
+        if (Forge::Input::IsKeyPressed(Forge::Key::LeftShift)) {
+            speed *= 2.0f;
+        }
+        if (Forge::Input::IsKeyPressed(Forge::Key::W)) m_Camera.Move( m_Camera.GetFront() * speed);
+        if (Forge::Input::IsKeyPressed(Forge::Key::S)) m_Camera.Move(-m_Camera.GetFront() * speed);
+        if (Forge::Input::IsKeyPressed(Forge::Key::D)) m_Camera.Move( m_Camera.GetRight() * speed);
+        if (Forge::Input::IsKeyPressed(Forge::Key::A)) m_Camera.Move(-m_Camera.GetRight() * speed);
+        if (Forge::Input::IsKeyPressed(Forge::Key::E)) m_Camera.Move( m_Camera.GetUp()    * speed);
+        if (Forge::Input::IsKeyPressed(Forge::Key::Q)) m_Camera.Move(-m_Camera.GetUp()    * speed);
+
         auto& entities = m_Scene.GetEntities();
         if (m_AutoRotate && entities.size() > 1) {
             entities[1].TransformData.Rotation.y += 35.0f * dt;
@@ -173,9 +194,8 @@ protected:
     }
 
     void OnImGuiRender() override {
-        // 1. Scene Hierarchy oynasi
+        // 1. Scene Hierarchy
         ImGui::Begin("Scene Hierarchy");
-
         if (ImGui::Button("+ Yangi Kub")) {
             auto& e = m_Scene.CreateEntity("Cube " + std::to_string(m_Scene.GetEntities().size()));
             e.TransformData.Position = { 0.0f, 1.0f, 0.0f };
@@ -192,7 +212,7 @@ protected:
         }
         ImGui::End();
 
-        // 2. Inspector oynasi
+        // 2. Inspector
         ImGui::Begin("Inspector");
         if (m_SelectedIndex >= 0 && m_SelectedIndex < static_cast<int>(entities.size())) {
             auto& e = entities[m_SelectedIndex];
@@ -212,12 +232,22 @@ protected:
         }
         ImGui::End();
 
-        // 3. Sahna & Yorug'lik sozlamalari
+        // 3. Engine & Camera Settings
         ImGui::Begin("Engine Settings");
         float fps = (m_LastDt > 0.0f) ? (1.0f / m_LastDt) : 0.0f;
         ImGui::Text("FPS: %.1f (%.2f ms)", fps, m_LastDt * 1000.0f);
         ImGui::Checkbox("Auto-Rotate Main Cube", &m_AutoRotate);
         ImGui::ColorEdit3("Fon rangi", m_ClearColor);
+
+        ImGui::Separator();
+        ImGui::Text("Kamera (O'ng tugma + WASD/QE, Shift=2x)");
+        ImGui::SliderFloat("Tezlik", &m_CameraSpeed, 1.0f, 15.0f);
+        ImGui::SliderFloat("Sezgirlik", &m_MouseSensitivity, 0.05f, 0.5f);
+        if (ImGui::Button("Kamerani qaytarish")) {
+            m_Camera.SetPosition({ 0.0f, 1.5f, 5.0f });
+            m_Camera.SetRotation(-90.0f, -15.0f);
+        }
+
         ImGui::Separator();
         ImGui::DragFloat3("Yorug'lik joyi", &m_LightPos.x, 0.1f);
         ImGui::ColorEdit3("Yorug'lik rangi", &m_LightColor.x);
@@ -242,6 +272,12 @@ private:
     bool m_AutoRotate = true;
     float m_LastDt = 0.0f;
     float m_ClearColor[3] = { 0.08f, 0.1f, 0.13f };
+
+    bool m_IsLooking = false;
+    float m_LastMouseX = 0.0f;
+    float m_LastMouseY = 0.0f;
+    float m_CameraSpeed = 3.5f;
+    float m_MouseSensitivity = 0.15f;
 
     glm::vec3 m_LightPos{ 2.5f, 3.0f, 2.5f };
     glm::vec3 m_LightColor{ 1.0f, 1.0f, 1.0f };
