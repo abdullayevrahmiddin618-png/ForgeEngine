@@ -9,6 +9,7 @@ namespace Forge {
         float x, y, z;
         float r, g, b;
         float nx, ny, nz;
+        float u, v;
     };
 
     class VertexArray {
