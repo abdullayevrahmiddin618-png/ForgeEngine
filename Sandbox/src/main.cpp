@@ -39,7 +39,6 @@ protected:
 
         m_Shader = std::make_unique<Forge::Shader>(vertexSrc, fragmentSrc);
 
-        // 3D Kub (6 tomon x 2 uchburchak = 36 ta nuqta)
         m_Cube = std::make_unique<Forge::VertexArray>(std::vector<Forge::Vertex>{
             // Old tomon (Qizil)
             { -0.5f, -0.5f,  0.5f,  0.9f, 0.2f, 0.2f },
@@ -92,11 +91,12 @@ protected:
     }
 
     void OnUpdate(float dt) override {
+        m_LastDt = dt;
+
         if (Forge::Input::IsKeyPressed(Forge::Key::Escape)) {
             Close();
         }
 
-        // Kamera harakati (WASD + QE)
         float speed = 2.5f * dt;
         if (Forge::Input::IsKeyPressed(Forge::Key::W)) m_Camera.Move({ 0.0f,  0.0f, -speed });
         if (Forge::Input::IsKeyPressed(Forge::Key::S)) m_Camera.Move({ 0.0f,  0.0f,  speed });
@@ -105,11 +105,10 @@ protected:
         if (Forge::Input::IsKeyPressed(Forge::Key::E)) m_Camera.Move({ 0.0f,  speed,  0.0f });
         if (Forge::Input::IsKeyPressed(Forge::Key::Q)) m_Camera.Move({ 0.0f, -speed,  0.0f });
 
-        // Kubni aylantirish
-        m_Rotation += 50.0f * dt;
+        m_Rotation += m_RotationSpeed * dt;
         glm::mat4 model = glm::rotate(glm::mat4(1.0f), glm::radians(m_Rotation), glm::vec3(0.5f, 1.0f, 0.0f));
 
-        Forge::Renderer::SetClearColor(0.08f, 0.1f, 0.13f, 1.0f);
+        Forge::Renderer::SetClearColor(m_ClearColor[0], m_ClearColor[1], m_ClearColor[2], 1.0f);
         Forge::Renderer::Clear();
 
         m_Shader->Bind();
@@ -117,6 +116,25 @@ protected:
         m_Shader->SetMat4("u_Model", model);
 
         Forge::Renderer::Draw(*m_Cube, *m_Shader);
+    }
+
+    void OnImGuiRender() override {
+        ImGui::Begin("ForgeEngine Inspector");
+
+        float fps = (m_LastDt > 0.0f) ? (1.0f / m_LastDt) : 0.0f;
+        ImGui::Text("FPS: %.1f (%.2f ms)", fps, m_LastDt * 1000.0f);
+        ImGui::Separator();
+
+        ImGui::ColorEdit3("Fon rangi", m_ClearColor);
+        ImGui::SliderFloat("Aylanish tezligi", &m_RotationSpeed, 0.0f, 200.0f);
+
+        auto pos = m_Camera.GetPosition();
+        ImGui::Text("Kamera: X=%.2f  Y=%.2f  Z=%.2f", pos.x, pos.y, pos.z);
+        if (ImGui::Button("Kamerani qaytarish")) {
+            m_Camera.SetPosition({ 0.0f, 0.0f, 3.0f });
+        }
+
+        ImGui::End();
     }
 
     void OnShutdown() override {
@@ -129,7 +147,11 @@ private:
     Forge::Camera m_Camera;
     std::unique_ptr<Forge::Shader> m_Shader;
     std::unique_ptr<Forge::VertexArray> m_Cube;
+
     float m_Rotation = 0.0f;
+    float m_RotationSpeed = 50.0f;
+    float m_LastDt = 0.0f;
+    float m_ClearColor[3] = { 0.08f, 0.1f, 0.13f };
 };
 
 int main() {
