@@ -74,6 +74,7 @@ add_library(ForgeEngine STATIC
     src/Renderer/VertexArray.cpp
     src/Renderer/Camera.cpp
     src/Renderer/Texture.cpp
+    src/Renderer/Mesh.cpp
     src/UI/ImGuiLayer.cpp
 )
 
