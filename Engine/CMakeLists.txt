@@ -40,6 +40,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(imgui)
 
+# stb (stb_image.h)
+FetchContent_Declare(
+    stb
+    GIT_REPOSITORY https://github.com/nothings/stb.git
+    GIT_TAG master
+)
+FetchContent_MakeAvailable(stb)
+
 add_library(imgui STATIC
     ${imgui_SOURCE_DIR}/imgui.cpp
     ${imgui_SOURCE_DIR}/imgui_draw.cpp
@@ -65,11 +73,13 @@ add_library(ForgeEngine STATIC
     src/Renderer/Shader.cpp
     src/Renderer/VertexArray.cpp
     src/Renderer/Camera.cpp
+    src/Renderer/Texture.cpp
     src/UI/ImGuiLayer.cpp
 )
 
-target_include_directories(ForgeEngine PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
+target_include_directories(ForgeEngine
+    PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/include
+    PRIVATE ${stb_SOURCE_DIR}
 )
 
 target_link_libraries(ForgeEngine
