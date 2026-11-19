@@ -10,8 +10,8 @@ public:
 
 protected:
     void OnInit() override {
-        FE_INFO("Sandbox: Scene, Tekstura va 3D Editor yuklanmoqda...");
-        m_Camera.SetPosition({ 0.0f, 1.5f, 5.0f });
+        FE_INFO("Sandbox: Scene, Mesh Generator va 3D Editor yuklanmoqda...");
+        m_Camera.SetPosition({ 0.0f, 1.8f, 5.5f });
         m_Camera.SetRotation(-90.0f, -15.0f);
 
         const std::string vertexSrc = R"(
@@ -79,69 +79,31 @@ protected:
         m_Shader = std::make_unique<Forge::Shader>(vertexSrc, fragmentSrc);
         m_Texture = Forge::Texture::CreateCheckerboard(256, 32);
 
-        m_CubeMesh = std::make_unique<Forge::VertexArray>(std::vector<Forge::Vertex>{
-            // Old (0, 0, 1)
-            { -0.5f, -0.5f,  0.5f,  1, 1, 1,   0.0f,  0.0f,  1.0f,  0.0f, 0.0f },
-            {  0.5f, -0.5f,  0.5f,  1, 1, 1,   0.0f,  0.0f,  1.0f,  1.0f, 0.0f },
-            {  0.5f,  0.5f,  0.5f,  1, 1, 1,   0.0f,  0.0f,  1.0f,  1.0f, 1.0f },
-            {  0.5f,  0.5f,  0.5f,  1, 1, 1,   0.0f,  0.0f,  1.0f,  1.0f, 1.0f },
-            { -0.5f,  0.5f,  0.5f,  1, 1, 1,   0.0f,  0.0f,  1.0f,  0.0f, 1.0f },
-            { -0.5f, -0.5f,  0.5f,  1, 1, 1,   0.0f,  0.0f,  1.0f,  0.0f, 0.0f },
-
-            // Orqa (0, 0, -1)
-            { -0.5f, -0.5f, -0.5f,  1, 1, 1,   0.0f,  0.0f, -1.0f,  0.0f, 0.0f },
-            {  0.5f, -0.5f, -0.5f,  1, 1, 1,   0.0f,  0.0f, -1.0f,  1.0f, 0.0f },
-            {  0.5f,  0.5f, -0.5f,  1, 1, 1,   0.0f,  0.0f, -1.0f,  1.0f, 1.0f },
-            {  0.5f,  0.5f, -0.5f,  1, 1, 1,   0.0f,  0.0f, -1.0f,  1.0f, 1.0f },
-            { -0.5f,  0.5f, -0.5f,  1, 1, 1,   0.0f,  0.0f, -1.0f,  0.0f, 1.0f },
-            { -0.5f, -0.5f, -0.5f,  1, 1, 1,   0.0f,  0.0f, -1.0f,  0.0f, 0.0f },
-
-            // Chap (-1, 0, 0)
-            { -0.5f,  0.5f,  0.5f,  1, 1, 1,  -1.0f,  0.0f,  0.0f,  1.0f, 1.0f },
-            { -0.5f,  0.5f, -0.5f,  1, 1, 1,  -1.0f,  0.0f,  0.0f,  0.0f, 1.0f },
-            { -0.5f, -0.5f, -0.5f,  1, 1, 1,  -1.0f,  0.0f,  0.0f,  0.0f, 0.0f },
-            { -0.5f, -0.5f, -0.5f,  1, 1, 1,  -1.0f,  0.0f,  0.0f,  0.0f, 0.0f },
-            { -0.5f, -0.5f,  0.5f,  1, 1, 1,  -1.0f,  0.0f,  0.0f,  1.0f, 0.0f },
-            { -0.5f,  0.5f,  0.5f,  1, 1, 1,  -1.0f,  0.0f,  0.0f,  1.0f, 1.0f },
-
-            // O'ng (1, 0, 0)
-            {  0.5f,  0.5f,  0.5f,  1, 1, 1,   1.0f,  0.0f,  0.0f,  0.0f, 1.0f },
-            {  0.5f,  0.5f, -0.5f,  1, 1, 1,   1.0f,  0.0f,  0.0f,  1.0f, 1.0f },
-            {  0.5f, -0.5f, -0.5f,  1, 1, 1,   1.0f,  0.0f,  0.0f,  1.0f, 0.0f },
-            {  0.5f, -0.5f, -0.5f,  1, 1, 1,   1.0f,  0.0f,  0.0f,  1.0f, 0.0f },
-            {  0.5f, -0.5f,  0.5f,  1, 1, 1,   1.0f,  0.0f,  0.0f,  0.0f, 0.0f },
-            {  0.5f,  0.5f,  0.5f,  1, 1, 1,   1.0f,  0.0f,  0.0f,  0.0f, 1.0f },
-
-            // Tepa (0, 1, 0)
-            { -0.5f,  0.5f, -0.5f,  1, 1, 1,   0.0f,  1.0f,  0.0f,  0.0f, 1.0f },
-            {  0.5f,  0.5f, -0.5f,  1, 1, 1,   0.0f,  1.0f,  0.0f,  1.0f, 1.0f },
-            {  0.5f,  0.5f,  0.5f,  1, 1, 1,   0.0f,  1.0f,  0.0f,  1.0f, 0.0f },
-            {  0.5f,  0.5f,  0.5f,  1, 1, 1,   0.0f,  1.0f,  0.0f,  1.0f, 0.0f },
-            { -0.5f,  0.5f,  0.5f,  1, 1, 1,   0.0f,  1.0f,  0.0f,  0.0f, 0.0f },
-            { -0.5f,  0.5f, -0.5f,  1, 1, 1,   0.0f,  1.0f,  0.0f,  0.0f, 1.0f },
-
-            // Past (0, -1, 0)
-            { -0.5f, -0.5f, -0.5f,  1, 1, 1,   0.0f, -1.0f,  0.0f,  0.0f, 1.0f },
-            {  0.5f, -0.5f, -0.5f,  1, 1, 1,   0.0f, -1.0f,  0.0f,  1.0f, 1.0f },
-            {  0.5f, -0.5f,  0.5f,  1, 1, 1,   0.0f, -1.0f,  0.0f,  1.0f, 0.0f },
-            {  0.5f, -0.5f,  0.5f,  1, 1, 1,   0.0f, -1.0f,  0.0f,  1.0f, 0.0f },
-            { -0.5f, -0.5f,  0.5f,  1, 1, 1,   0.0f, -1.0f,  0.0f,  0.0f, 0.0f },
-            { -0.5f, -0.5f, -0.5f,  1, 1, 1,   0.0f, -1.0f,  0.0f,  0.0f, 1.0f }
-        });
+        m_CubeMesh    = Forge::Mesh::CreateCube();
+        m_SphereMesh  = Forge::Mesh::CreateSphere(32, 20);
+        m_PyramidMesh = Forge::Mesh::CreatePyramid();
+        m_PlaneMesh   = Forge::Mesh::CreatePlane();
 
         auto& floor = m_Scene.CreateEntity("Floor");
-        floor.TransformData.Position = { 0.0f, -0.75f, 0.0f };
-        floor.TransformData.Scale    = { 6.0f, 0.2f, 6.0f };
+        floor.Shape                  = Forge::MeshType::Plane;
+        floor.TransformData.Position = { 0.0f, -0.5f, 0.0f };
+        floor.TransformData.Scale    = { 8.0f, 1.0f, 8.0f };
         floor.Color                  = { 0.45f, 0.5f, 0.55f };
 
-        auto& cube1 = m_Scene.CreateEntity("Main Cube");
-        cube1.TransformData.Position = { -0.8f, 0.0f, 0.0f };
-        cube1.Color                  = { 0.95f, 0.45f, 0.3f };
+        auto& cube = m_Scene.CreateEntity("Main Cube");
+        cube.Shape                  = Forge::MeshType::Cube;
+        cube.TransformData.Position = { -1.5f, 0.0f, 0.0f };
+        cube.Color                  = { 0.95f, 0.45f, 0.3f };
 
-        auto& cube2 = m_Scene.CreateEntity("Side Cube");
-        cube2.TransformData.Position = { 1.0f, 0.2f, -0.5f };
-        cube2.TransformData.Rotation = { 0.0f, 35.0f, 0.0f };
-        cube2.Color                  = { 0.3f, 0.7f, 1.0f };
+        auto& sphere = m_Scene.CreateEntity("Sphere");
+        sphere.Shape                  = Forge::MeshType::Sphere;
+        sphere.TransformData.Position = { 0.0f, 0.0f, 0.0f };
+        sphere.Color                  = { 0.3f, 0.7f, 1.0f };
+
+        auto& pyramid = m_Scene.CreateEntity("Pyramid");
+        pyramid.Shape                  = Forge::MeshType::Pyramid;
+        pyramid.TransformData.Position = { 1.5f, 0.0f, 0.0f };
+        pyramid.Color                  = { 0.95f, 0.8f, 0.25f };
     }
 
     void OnUpdate(float dt) override {
@@ -203,17 +165,23 @@ protected:
             if (!entity.Visible) continue;
             m_Shader->SetMat4("u_Model", entity.TransformData.GetModelMatrix());
             m_Shader->SetVec3("u_ObjectColor", entity.Color);
-            Forge::Renderer::Draw(*m_CubeMesh, *m_Shader);
+            Forge::Renderer::Draw(GetMesh(entity.Shape), *m_Shader);
         }
     }
 
     void OnImGuiRender() override {
         // 1. Scene Hierarchy
         ImGui::Begin("Scene Hierarchy");
-        if (ImGui::Button("+ Yangi Kub")) {
-            auto& e = m_Scene.CreateEntity("Cube " + std::to_string(m_Scene.GetEntities().size()));
-            e.TransformData.Position = { 0.0f, 1.0f, 0.0f };
-            m_SelectedIndex = static_cast<int>(m_Scene.GetEntities().size()) - 1;
+        if (ImGui::Button("+ Kub")) {
+            AddEntity("Cube", Forge::MeshType::Cube);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("+ Sfera")) {
+            AddEntity("Sphere", Forge::MeshType::Sphere);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("+ Piramida")) {
+            AddEntity("Pyramid", Forge::MeshType::Pyramid);
         }
 
         ImGui::Separator();
@@ -232,6 +200,13 @@ protected:
             auto& e = entities[m_SelectedIndex];
             ImGui::Text("Obyekt: %s", e.Name.c_str());
             ImGui::Checkbox("Ko'rinadigan", &e.Visible);
+
+            const char* shapes[] = { "Cube", "Sphere", "Pyramid", "Plane" };
+            int currentShape = static_cast<int>(e.Shape);
+            if (ImGui::Combo("Shakl", &currentShape, shapes, 4)) {
+                e.Shape = static_cast<Forge::MeshType>(currentShape);
+            }
+
             ImGui::DragFloat3("Position", &e.TransformData.Position.x, 0.05f);
             ImGui::DragFloat3("Rotation", &e.TransformData.Rotation.x, 1.0f);
             ImGui::DragFloat3("Scale",    &e.TransformData.Scale.x,    0.05f);
@@ -259,7 +234,7 @@ protected:
         ImGui::SliderFloat("Tezlik", &m_CameraSpeed, 1.0f, 15.0f);
         ImGui::SliderFloat("Sezgirlik", &m_MouseSensitivity, 0.05f, 0.5f);
         if (ImGui::Button("Kamerani qaytarish")) {
-            m_Camera.SetPosition({ 0.0f, 1.5f, 5.0f });
+            m_Camera.SetPosition({ 0.0f, 1.8f, 5.5f });
             m_Camera.SetRotation(-90.0f, -15.0f);
         }
 
@@ -272,18 +247,42 @@ protected:
     }
 
     void OnShutdown() override {
-        m_Texture.reset();
+        m_PlaneMesh.reset();
+        m_PyramidMesh.reset();
+        m_SphereMesh.reset();
         m_CubeMesh.reset();
+        m_Texture.reset();
         m_Shader.reset();
         FE_INFO("Sandbox: OnShutdown()");
     }
 
 private:
+    void AddEntity(const std::string& baseName, Forge::MeshType type) {
+        auto& e = m_Scene.CreateEntity(baseName + " " + std::to_string(m_Scene.GetEntities().size()));
+        e.Shape = type;
+        e.TransformData.Position = { 0.0f, 1.0f, 0.0f };
+        m_SelectedIndex = static_cast<int>(m_Scene.GetEntities().size()) - 1;
+    }
+
+    const Forge::VertexArray& GetMesh(Forge::MeshType type) const {
+        switch (type) {
+            case Forge::MeshType::Sphere:  return *m_SphereMesh;
+            case Forge::MeshType::Pyramid: return *m_PyramidMesh;
+            case Forge::MeshType::Plane:   return *m_PlaneMesh;
+            case Forge::MeshType::Cube:
+            default:                       return *m_CubeMesh;
+        }
+    }
+
     Forge::Camera m_Camera;
     Forge::Scene m_Scene;
     std::unique_ptr<Forge::Shader> m_Shader;
-    std::unique_ptr<Forge::VertexArray> m_CubeMesh;
     std::unique_ptr<Forge::Texture> m_Texture;
+
+    std::unique_ptr<Forge::VertexArray> m_CubeMesh;
+    std::unique_ptr<Forge::VertexArray> m_SphereMesh;
+    std::unique_ptr<Forge::VertexArray> m_PyramidMesh;
+    std::unique_ptr<Forge::VertexArray> m_PlaneMesh;
 
     int m_SelectedIndex = 1;
     bool m_AutoRotate = true;
