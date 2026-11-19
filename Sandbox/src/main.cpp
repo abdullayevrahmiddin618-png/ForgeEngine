@@ -10,7 +10,7 @@ public:
 
 protected:
     void OnInit() override {
-        FE_INFO("Sandbox: Scene va Free-look 3D Editor yuklanmoqda...");
+        FE_INFO("Sandbox: Scene, Tekstura va 3D Editor yuklanmoqda...");
         m_Camera.SetPosition({ 0.0f, 1.5f, 5.0f });
         m_Camera.SetRotation(-90.0f, -15.0f);
 
@@ -19,16 +19,19 @@ protected:
             layout (location = 0) in vec3 a_Position;
             layout (location = 1) in vec3 a_Color;
             layout (location = 2) in vec3 a_Normal;
+            layout (location = 3) in vec2 a_TexCoord;
 
             uniform mat4 u_ViewProjection;
             uniform mat4 u_Model;
 
             out vec3 v_Normal;
             out vec3 v_FragPos;
+            out vec2 v_TexCoord;
 
             void main() {
                 v_FragPos = vec3(u_Model * vec4(a_Position, 1.0));
                 v_Normal = mat3(transpose(inverse(u_Model))) * a_Normal;
+                v_TexCoord = a_TexCoord;
                 gl_Position = u_ViewProjection * vec4(v_FragPos, 1.0);
             }
         )";
@@ -37,6 +40,7 @@ protected:
             #version 330 core
             in vec3 v_Normal;
             in vec3 v_FragPos;
+            in vec2 v_TexCoord;
 
             uniform vec3 u_ObjectColor;
             uniform vec3 u_LightPos;
@@ -44,6 +48,8 @@ protected:
             uniform vec3 u_ViewPos;
             uniform float u_AmbientStrength;
             uniform float u_SpecularStrength;
+            uniform sampler2D u_Texture;
+            uniform int u_UseTexture;
 
             out vec4 FragColor;
 
@@ -60,76 +66,82 @@ protected:
                 float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
                 vec3 specular = u_SpecularStrength * spec * u_LightColor;
 
-                vec3 result = (ambient + diffuse + specular) * u_ObjectColor;
+                vec3 baseColor = u_ObjectColor;
+                if (u_UseTexture == 1) {
+                    baseColor *= texture(u_Texture, v_TexCoord).rgb;
+                }
+
+                vec3 result = (ambient + diffuse + specular) * baseColor;
                 FragColor = vec4(result, 1.0);
             }
         )";
 
         m_Shader = std::make_unique<Forge::Shader>(vertexSrc, fragmentSrc);
+        m_Texture = Forge::Texture::CreateCheckerboard(256, 32);
 
         m_CubeMesh = std::make_unique<Forge::VertexArray>(std::vector<Forge::Vertex>{
             // Old (0, 0, 1)
-            { -0.5f, -0.5f,  0.5f,  1, 1, 1,   0.0f,  0.0f,  1.0f },
-            {  0.5f, -0.5f,  0.5f,  1, 1, 1,   0.0f,  0.0f,  1.0f },
-            {  0.5f,  0.5f,  0.5f,  1, 1, 1,   0.0f,  0.0f,  1.0f },
-            {  0.5f,  0.5f,  0.5f,  1, 1, 1,   0.0f,  0.0f,  1.0f },
-            { -0.5f,  0.5f,  0.5f,  1, 1, 1,   0.0f,  0.0f,  1.0f },
-            { -0.5f, -0.5f,  0.5f,  1, 1, 1,   0.0f,  0.0f,  1.0f },
+            { -0.5f, -0.5f,  0.5f,  1, 1, 1,   0.0f,  0.0f,  1.0f,  0.0f, 0.0f },
+            {  0.5f, -0.5f,  0.5f,  1, 1, 1,   0.0f,  0.0f,  1.0f,  1.0f, 0.0f },
+            {  0.5f,  0.5f,  0.5f,  1, 1, 1,   0.0f,  0.0f,  1.0f,  1.0f, 1.0f },
+            {  0.5f,  0.5f,  0.5f,  1, 1, 1,   0.0f,  0.0f,  1.0f,  1.0f, 1.0f },
+            { -0.5f,  0.5f,  0.5f,  1, 1, 1,   0.0f,  0.0f,  1.0f,  0.0f, 1.0f },
+            { -0.5f, -0.5f,  0.5f,  1, 1, 1,   0.0f,  0.0f,  1.0f,  0.0f, 0.0f },
 
             // Orqa (0, 0, -1)
-            { -0.5f, -0.5f, -0.5f,  1, 1, 1,   0.0f,  0.0f, -1.0f },
-            {  0.5f, -0.5f, -0.5f,  1, 1, 1,   0.0f,  0.0f, -1.0f },
-            {  0.5f,  0.5f, -0.5f,  1, 1, 1,   0.0f,  0.0f, -1.0f },
-            {  0.5f,  0.5f, -0.5f,  1, 1, 1,   0.0f,  0.0f, -1.0f },
-            { -0.5f,  0.5f, -0.5f,  1, 1, 1,   0.0f,  0.0f, -1.0f },
-            { -0.5f, -0.5f, -0.5f,  1, 1, 1,   0.0f,  0.0f, -1.0f },
+            { -0.5f, -0.5f, -0.5f,  1, 1, 1,   0.0f,  0.0f, -1.0f,  0.0f, 0.0f },
+            {  0.5f, -0.5f, -0.5f,  1, 1, 1,   0.0f,  0.0f, -1.0f,  1.0f, 0.0f },
+            {  0.5f,  0.5f, -0.5f,  1, 1, 1,   0.0f,  0.0f, -1.0f,  1.0f, 1.0f },
+            {  0.5f,  0.5f, -0.5f,  1, 1, 1,   0.0f,  0.0f, -1.0f,  1.0f, 1.0f },
+            { -0.5f,  0.5f, -0.5f,  1, 1, 1,   0.0f,  0.0f, -1.0f,  0.0f, 1.0f },
+            { -0.5f, -0.5f, -0.5f,  1, 1, 1,   0.0f,  0.0f, -1.0f,  0.0f, 0.0f },
 
             // Chap (-1, 0, 0)
-            { -0.5f,  0.5f,  0.5f,  1, 1, 1,  -1.0f,  0.0f,  0.0f },
-            { -0.5f,  0.5f, -0.5f,  1, 1, 1,  -1.0f,  0.0f,  0.0f },
-            { -0.5f, -0.5f, -0.5f,  1, 1, 1,  -1.0f,  0.0f,  0.0f },
-            { -0.5f, -0.5f, -0.5f,  1, 1, 1,  -1.0f,  0.0f,  0.0f },
-            { -0.5f, -0.5f,  0.5f,  1, 1, 1,  -1.0f,  0.0f,  0.0f },
-            { -0.5f,  0.5f,  0.5f,  1, 1, 1,  -1.0f,  0.0f,  0.0f },
+            { -0.5f,  0.5f,  0.5f,  1, 1, 1,  -1.0f,  0.0f,  0.0f,  1.0f, 1.0f },
+            { -0.5f,  0.5f, -0.5f,  1, 1, 1,  -1.0f,  0.0f,  0.0f,  0.0f, 1.0f },
+            { -0.5f, -0.5f, -0.5f,  1, 1, 1,  -1.0f,  0.0f,  0.0f,  0.0f, 0.0f },
+            { -0.5f, -0.5f, -0.5f,  1, 1, 1,  -1.0f,  0.0f,  0.0f,  0.0f, 0.0f },
+            { -0.5f, -0.5f,  0.5f,  1, 1, 1,  -1.0f,  0.0f,  0.0f,  1.0f, 0.0f },
+            { -0.5f,  0.5f,  0.5f,  1, 1, 1,  -1.0f,  0.0f,  0.0f,  1.0f, 1.0f },
 
             // O'ng (1, 0, 0)
-            {  0.5f,  0.5f,  0.5f,  1, 1, 1,   1.0f,  0.0f,  0.0f },
-            {  0.5f,  0.5f, -0.5f,  1, 1, 1,   1.0f,  0.0f,  0.0f },
-            {  0.5f, -0.5f, -0.5f,  1, 1, 1,   1.0f,  0.0f,  0.0f },
-            {  0.5f, -0.5f, -0.5f,  1, 1, 1,   1.0f,  0.0f,  0.0f },
-            {  0.5f, -0.5f,  0.5f,  1, 1, 1,   1.0f,  0.0f,  0.0f },
-            {  0.5f,  0.5f,  0.5f,  1, 1, 1,   1.0f,  0.0f,  0.0f },
+            {  0.5f,  0.5f,  0.5f,  1, 1, 1,   1.0f,  0.0f,  0.0f,  0.0f, 1.0f },
+            {  0.5f,  0.5f, -0.5f,  1, 1, 1,   1.0f,  0.0f,  0.0f,  1.0f, 1.0f },
+            {  0.5f, -0.5f, -0.5f,  1, 1, 1,   1.0f,  0.0f,  0.0f,  1.0f, 0.0f },
+            {  0.5f, -0.5f, -0.5f,  1, 1, 1,   1.0f,  0.0f,  0.0f,  1.0f, 0.0f },
+            {  0.5f, -0.5f,  0.5f,  1, 1, 1,   1.0f,  0.0f,  0.0f,  0.0f, 0.0f },
+            {  0.5f,  0.5f,  0.5f,  1, 1, 1,   1.0f,  0.0f,  0.0f,  0.0f, 1.0f },
 
             // Tepa (0, 1, 0)
-            { -0.5f,  0.5f, -0.5f,  1, 1, 1,   0.0f,  1.0f,  0.0f },
-            {  0.5f,  0.5f, -0.5f,  1, 1, 1,   0.0f,  1.0f,  0.0f },
-            {  0.5f,  0.5f,  0.5f,  1, 1, 1,   0.0f,  1.0f,  0.0f },
-            {  0.5f,  0.5f,  0.5f,  1, 1, 1,   0.0f,  1.0f,  0.0f },
-            { -0.5f,  0.5f,  0.5f,  1, 1, 1,   0.0f,  1.0f,  0.0f },
-            { -0.5f,  0.5f, -0.5f,  1, 1, 1,   0.0f,  1.0f,  0.0f },
+            { -0.5f,  0.5f, -0.5f,  1, 1, 1,   0.0f,  1.0f,  0.0f,  0.0f, 1.0f },
+            {  0.5f,  0.5f, -0.5f,  1, 1, 1,   0.0f,  1.0f,  0.0f,  1.0f, 1.0f },
+            {  0.5f,  0.5f,  0.5f,  1, 1, 1,   0.0f,  1.0f,  0.0f,  1.0f, 0.0f },
+            {  0.5f,  0.5f,  0.5f,  1, 1, 1,   0.0f,  1.0f,  0.0f,  1.0f, 0.0f },
+            { -0.5f,  0.5f,  0.5f,  1, 1, 1,   0.0f,  1.0f,  0.0f,  0.0f, 0.0f },
+            { -0.5f,  0.5f, -0.5f,  1, 1, 1,   0.0f,  1.0f,  0.0f,  0.0f, 1.0f },
 
             // Past (0, -1, 0)
-            { -0.5f, -0.5f, -0.5f,  1, 1, 1,   0.0f, -1.0f,  0.0f },
-            {  0.5f, -0.5f, -0.5f,  1, 1, 1,   0.0f, -1.0f,  0.0f },
-            {  0.5f, -0.5f,  0.5f,  1, 1, 1,   0.0f, -1.0f,  0.0f },
-            {  0.5f, -0.5f,  0.5f,  1, 1, 1,   0.0f, -1.0f,  0.0f },
-            { -0.5f, -0.5f,  0.5f,  1, 1, 1,   0.0f, -1.0f,  0.0f },
-            { -0.5f, -0.5f, -0.5f,  1, 1, 1,   0.0f, -1.0f,  0.0f }
+            { -0.5f, -0.5f, -0.5f,  1, 1, 1,   0.0f, -1.0f,  0.0f,  0.0f, 1.0f },
+            {  0.5f, -0.5f, -0.5f,  1, 1, 1,   0.0f, -1.0f,  0.0f,  1.0f, 1.0f },
+            {  0.5f, -0.5f,  0.5f,  1, 1, 1,   0.0f, -1.0f,  0.0f,  1.0f, 0.0f },
+            {  0.5f, -0.5f,  0.5f,  1, 1, 1,   0.0f, -1.0f,  0.0f,  1.0f, 0.0f },
+            { -0.5f, -0.5f,  0.5f,  1, 1, 1,   0.0f, -1.0f,  0.0f,  0.0f, 0.0f },
+            { -0.5f, -0.5f, -0.5f,  1, 1, 1,   0.0f, -1.0f,  0.0f,  0.0f, 1.0f }
         });
 
         auto& floor = m_Scene.CreateEntity("Floor");
         floor.TransformData.Position = { 0.0f, -0.75f, 0.0f };
         floor.TransformData.Scale    = { 6.0f, 0.2f, 6.0f };
-        floor.Color                  = { 0.25f, 0.28f, 0.32f };
+        floor.Color                  = { 0.45f, 0.5f, 0.55f };
 
         auto& cube1 = m_Scene.CreateEntity("Main Cube");
         cube1.TransformData.Position = { -0.8f, 0.0f, 0.0f };
-        cube1.Color                  = { 0.9f, 0.35f, 0.2f };
+        cube1.Color                  = { 0.95f, 0.45f, 0.3f };
 
         auto& cube2 = m_Scene.CreateEntity("Side Cube");
         cube2.TransformData.Position = { 1.0f, 0.2f, -0.5f };
         cube2.TransformData.Rotation = { 0.0f, 35.0f, 0.0f };
-        cube2.Color                  = { 0.2f, 0.6f, 0.95f };
+        cube2.Color                  = { 0.3f, 0.7f, 1.0f };
     }
 
     void OnUpdate(float dt) override {
@@ -139,7 +151,6 @@ protected:
             Close();
         }
 
-        // Sichqoncha o'ng tugmasi bilan Free-look kamera burilishi
         auto [mouseX, mouseY] = Forge::Input::GetMousePosition();
         if (Forge::Input::IsMouseButtonPressed(Forge::Mouse::Right) && !ImGui::GetIO().WantCaptureMouse) {
             if (!m_IsLooking) {
@@ -148,7 +159,7 @@ protected:
                 m_IsLooking = true;
             }
             float dx = mouseX - m_LastMouseX;
-            float dy = m_LastMouseY - mouseY; // Y o'qi pastga qaragan
+            float dy = m_LastMouseY - mouseY;
             m_LastMouseX = mouseX;
             m_LastMouseY = mouseY;
 
@@ -157,7 +168,6 @@ protected:
             m_IsLooking = false;
         }
 
-        // Kamera qarab turgan yo'nalishda uchish (Shift bosilsa 2x tezroq)
         float speed = m_CameraSpeed * dt;
         if (Forge::Input::IsKeyPressed(Forge::Key::LeftShift)) {
             speed *= 2.0f;
@@ -177,6 +187,8 @@ protected:
         Forge::Renderer::SetClearColor(m_ClearColor[0], m_ClearColor[1], m_ClearColor[2], 1.0f);
         Forge::Renderer::Clear();
 
+        m_Texture->Bind(0);
+
         m_Shader->Bind();
         m_Shader->SetMat4("u_ViewProjection", m_Camera.GetViewProjectionMatrix());
         m_Shader->SetVec3("u_LightPos", m_LightPos);
@@ -184,6 +196,8 @@ protected:
         m_Shader->SetVec3("u_ViewPos", m_Camera.GetPosition());
         m_Shader->SetFloat("u_AmbientStrength", m_AmbientStrength);
         m_Shader->SetFloat("u_SpecularStrength", m_SpecularStrength);
+        m_Shader->SetInt("u_Texture", 0);
+        m_Shader->SetInt("u_UseTexture", m_UseTexture ? 1 : 0);
 
         for (const auto& entity : entities) {
             if (!entity.Visible) continue;
@@ -237,6 +251,7 @@ protected:
         float fps = (m_LastDt > 0.0f) ? (1.0f / m_LastDt) : 0.0f;
         ImGui::Text("FPS: %.1f (%.2f ms)", fps, m_LastDt * 1000.0f);
         ImGui::Checkbox("Auto-Rotate Main Cube", &m_AutoRotate);
+        ImGui::Checkbox("Tekstura yoqish", &m_UseTexture);
         ImGui::ColorEdit3("Fon rangi", m_ClearColor);
 
         ImGui::Separator();
@@ -257,6 +272,7 @@ protected:
     }
 
     void OnShutdown() override {
+        m_Texture.reset();
         m_CubeMesh.reset();
         m_Shader.reset();
         FE_INFO("Sandbox: OnShutdown()");
@@ -267,9 +283,11 @@ private:
     Forge::Scene m_Scene;
     std::unique_ptr<Forge::Shader> m_Shader;
     std::unique_ptr<Forge::VertexArray> m_CubeMesh;
+    std::unique_ptr<Forge::Texture> m_Texture;
 
     int m_SelectedIndex = 1;
     bool m_AutoRotate = true;
+    bool m_UseTexture = true;
     float m_LastDt = 0.0f;
     float m_ClearColor[3] = { 0.08f, 0.1f, 0.13f };
 
