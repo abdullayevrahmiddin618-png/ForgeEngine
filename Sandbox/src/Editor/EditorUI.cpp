@@ -1,6 +1,7 @@
 #include "EditorUI.h"
 #include <algorithm>
 #include <cctype>
+#include <cstdint>
 #include <cstdio>
 
 void EditorUI::PushLog(EditorState& state, const std::string& msg) {
@@ -246,7 +247,34 @@ void EditorUI::Render(Forge::Scene& scene, EditorState& state, const EditorCallb
     }
     ImGui::End();
 
-    // 5. Bottom Panel: Console & World Settings
+    // 5. Center Panel: 3D Viewport
+    float vpX = vp->Pos.x + leftW;
+    float vpY = vp->Pos.y + topY;
+    float vpW = vp->Size.x - leftW - rightW;
+    float vpH = midH;
+
+    ImGui::SetNextWindowPos(ImVec2(vpX, vpY));
+    ImGui::SetNextWindowSize(ImVec2(vpW, vpH));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+    ImGui::Begin("Viewport", nullptr, flags | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+    {
+        state.ViewportHovered = ImGui::IsWindowHovered();
+        ImVec2 avail = ImGui::GetContentRegionAvail();
+        state.ViewportSize = { avail.x, avail.y };
+
+        if (state.ViewportTextureID != 0 && avail.x > 0 && avail.y > 0) {
+            ImGui::Image(
+                (ImTextureID)(uintptr_t)state.ViewportTextureID,
+                avail,
+                ImVec2(0.0f, 1.0f),
+                ImVec2(1.0f, 0.0f)
+            );
+        }
+    }
+    ImGui::End();
+    ImGui::PopStyleVar();
+
+    // 6. Bottom Panel: Console & World Settings
     ImGui::SetNextWindowPos(ImVec2(vp->Pos.x, vp->Pos.y + vp->Size.y - bottomH));
     ImGui::SetNextWindowSize(ImVec2(vp->Size.x, bottomH));
     ImGui::Begin("##BottomPanel", nullptr, flags | ImGuiWindowFlags_NoTitleBar);
@@ -278,6 +306,7 @@ void EditorUI::Render(Forge::Scene& scene, EditorState& state, const EditorCallb
                 ImGui::SliderFloat("Camera Speed", &state.CameraSpeed, 1.0f, 15.0f);
                 ImGui::SliderFloat("Sensitivity", &state.MouseSensitivity, 0.05f, 0.5f);
                 ImGui::Checkbox("Checker Texture", &state.World.UseTexture);
+                ImGui::Checkbox("3D Grid (Infinite)", &state.ShowGrid);
                 ImGui::Columns(1);
                 ImGui::EndTabItem();
             }
