@@ -31,6 +31,8 @@ private:
     std::unique_ptr<Forge::VertexArray> m_SphereMesh;
     std::unique_ptr<Forge::VertexArray> m_PyramidMesh;
     std::unique_ptr<Forge::VertexArray> m_PlaneMesh;
+    std::unique_ptr<Forge::Framebuffer> m_Framebuffer;
+    std::unique_ptr<Forge::Grid> m_Grid;
 
     bool m_IsLooking   = false;
     float m_LastMouseX = 0.0f;
