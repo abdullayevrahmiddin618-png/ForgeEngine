@@ -40,7 +40,6 @@ void EditorUI::ApplyForgeTheme() {
     c[ImGuiCol_TitleBgActive]    = ImVec4(0.09f, 0.11f, 0.14f, 1.00f);
     c[ImGuiCol_MenuBarBg]        = ImVec4(0.06f, 0.07f, 0.09f, 1.00f);
 
-    // ForgeEngine Cyan-Blue Accent
     c[ImGuiCol_Header]           = ImVec4(0.10f, 0.42f, 0.58f, 0.85f);
     c[ImGuiCol_HeaderHovered]    = ImVec4(0.14f, 0.54f, 0.72f, 0.90f);
     c[ImGuiCol_HeaderActive]     = ImVec4(0.16f, 0.64f, 0.85f, 1.00f);
@@ -62,7 +61,7 @@ void EditorUI::ApplyForgeTheme() {
     c[ImGuiCol_SliderGrabActive] = ImVec4(0.30f, 0.80f, 1.00f, 1.00f);
 }
 
-void EditorUI::Render(Forge::Scene& scene, EditorState& state, const EditorCallbacks& cb) {
+void EditorUI::Render(Forge::Scene& scene, const Forge::Camera& camera, EditorState& state, const EditorCallbacks& cb) {
     if (!m_ThemeApplied) {
         ApplyForgeTheme();
         m_ThemeApplied = true;
@@ -116,15 +115,31 @@ void EditorUI::Render(Forge::Scene& scene, EditorState& state, const EditorCallb
         ImGuiWindowFlags_NoCollapse |
         ImGuiWindowFlags_NoBringToFrontOnFocus;
 
-    // 2. Action Bar (Save / Load / Play / Pause / Stop)
+    // 2. Action Bar (Save / Load | Move / Rotate / Scale | Play / Pause / Stop)
     ImGui::SetNextWindowPos(ImVec2(vp->Pos.x, vp->Pos.y + menuH));
     ImGui::SetNextWindowSize(ImVec2(vp->Size.x, barH));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 6.0f));
     ImGui::Begin("##ActionBar", nullptr, flags | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar);
     {
-        if (ImGui::Button("Save", ImVec2(60, 24))) cb.OnSaveScene();
+        if (ImGui::Button("Save", ImVec2(55, 24))) cb.OnSaveScene();
         ImGui::SameLine();
-        if (ImGui::Button("Load", ImVec2(60, 24))) cb.OnLoadScene();
+        if (ImGui::Button("Load", ImVec2(55, 24))) cb.OnLoadScene();
+
+        ImGui::SameLine(0.0f, 20.0f);
+
+        auto gizmoBtn = [&](const char* label, GizmoMode mode) {
+            bool active = (state.ActiveGizmo == mode);
+            ImGui::PushStyleColor(ImGuiCol_Button, active
+                ? ImVec4(0.14f, 0.54f, 0.72f, 1.0f) : ImVec4(0.14f, 0.17f, 0.22f, 1.0f));
+            if (ImGui::Button(label, ImVec2(62, 24))) state.ActiveGizmo = mode;
+            ImGui::PopStyleColor();
+        };
+
+        gizmoBtn("Move", GizmoMode::Translate);
+        ImGui::SameLine();
+        gizmoBtn("Rotate", GizmoMode::Rotate);
+        ImGui::SameLine();
+        gizmoBtn("Scale", GizmoMode::Scale);
 
         float centerW = 70.0f * 3.0f + 12.0f;
         ImGui::SameLine();
@@ -242,12 +257,12 @@ void EditorUI::Render(Forge::Scene& scene, EditorState& state, const EditorCallb
             }
             ImGui::PopStyleColor();
         } else {
-            ImGui::TextDisabled("Scene panelidan obyekt tanlang.");
+            ImGui::TextDisabled("Viewport yoki Scene dan obyekt tanlang.");
         }
     }
     ImGui::End();
 
-    // 5. Center Panel: 3D Viewport
+    // 5. Center Panel: 3D Viewport + Raycasting + 3D Gizmo
     float vpX = vp->Pos.x + leftW;
     float vpY = vp->Pos.y + topY;
     float vpW = vp->Size.x - leftW - rightW;
@@ -259,7 +274,8 @@ void EditorUI::Render(Forge::Scene& scene, EditorState& state, const EditorCallb
     ImGui::Begin("Viewport", nullptr, flags | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     {
         state.ViewportHovered = ImGui::IsWindowHovered();
-        ImVec2 avail = ImGui::GetContentRegionAvail();
+        ImVec2 imgPos = ImGui::GetCursorScreenPos();
+        ImVec2 avail  = ImGui::GetContentRegionAvail();
         state.ViewportSize = { avail.x, avail.y };
 
         if (state.ViewportTextureID != 0 && avail.x > 0 && avail.y > 0) {
@@ -268,6 +284,16 @@ void EditorUI::Render(Forge::Scene& scene, EditorState& state, const EditorCallb
                 avail,
                 ImVec2(0.0f, 1.0f),
                 ImVec2(1.0f, 0.0f)
+            );
+
+            m_Gizmo.UpdateAndDraw(
+                scene,
+                camera,
+                state.SelectedIndex,
+                state.ActiveGizmo,
+                { imgPos.x, imgPos.y },
+                { avail.x, avail.y },
+                state.ViewportHovered
             );
         }
     }
