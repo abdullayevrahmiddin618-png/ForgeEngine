@@ -20,3 +20,4 @@
 #include "Forge/Scene/Transform.h"
 #include "Forge/Scene/Entity.h"
 #include "Forge/Scene/Scene.h"
+#include "Forge/Physics/PhysicsWorld.h"
