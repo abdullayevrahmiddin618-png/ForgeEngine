@@ -25,7 +25,10 @@ bool SceneSerializer::Save(const std::string& filepath, Forge::Scene& scene, con
             << e.TransformData.Scale.x << " " << e.TransformData.Scale.y << " " << e.TransformData.Scale.z << " "
             << e.Color.x << " " << e.Color.y << " " << e.Color.z << " "
             << std::quoted(e.MeshPath) << " "
-            << std::quoted(e.TexturePath) << "\n";
+            << std::quoted(e.TexturePath) << " "
+            << (e.PhysicsEnabled ? 1 : 0) << " "
+            << (e.IsStatic ? 1 : 0) << " "
+            << e.Bounciness << "\n";
     }
 
     return true;
@@ -59,7 +62,10 @@ bool SceneSerializer::Load(const std::string& filepath, Forge::Scene& scene, Wor
         } else if (tag == "ENTITY") {
             std::string name, meshPath, texPath;
             int shapeInt = 0, visInt = 1;
+            int physInt = 0, staticInt = 0;
+            float bounce = 0.35f;
             glm::vec3 pos, rot, scale, color;
+
             iss >> std::quoted(name) >> shapeInt >> visInt
                 >> pos.x >> pos.y >> pos.z
                 >> rot.x >> rot.y >> rot.z
@@ -68,6 +74,9 @@ bool SceneSerializer::Load(const std::string& filepath, Forge::Scene& scene, Wor
 
             if (iss >> std::quoted(meshPath)) {
                 iss >> std::quoted(texPath);
+                if (iss >> physInt >> staticInt >> bounce) {
+                    // Fizika ma'lumotlari o'qildi
+                }
             }
 
             auto& e = scene.CreateEntity(name);
@@ -79,6 +88,10 @@ bool SceneSerializer::Load(const std::string& filepath, Forge::Scene& scene, Wor
             e.Color                  = color;
             e.MeshPath               = meshPath;
             e.TexturePath            = texPath;
+            e.PhysicsEnabled         = (physInt != 0);
+            e.IsStatic               = (staticInt != 0);
+            e.Bounciness             = bounce;
+            e.Velocity               = { 0.0f, 0.0f, 0.0f };
         }
     }
 
