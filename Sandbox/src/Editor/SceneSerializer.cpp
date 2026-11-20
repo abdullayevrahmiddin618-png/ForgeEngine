@@ -23,7 +23,9 @@ bool SceneSerializer::Save(const std::string& filepath, Forge::Scene& scene, con
             << e.TransformData.Position.x << " " << e.TransformData.Position.y << " " << e.TransformData.Position.z << " "
             << e.TransformData.Rotation.x << " " << e.TransformData.Rotation.y << " " << e.TransformData.Rotation.z << " "
             << e.TransformData.Scale.x << " " << e.TransformData.Scale.y << " " << e.TransformData.Scale.z << " "
-            << e.Color.x << " " << e.Color.y << " " << e.Color.z << "\n";
+            << e.Color.x << " " << e.Color.y << " " << e.Color.z << " "
+            << std::quoted(e.MeshPath) << " "
+            << std::quoted(e.TexturePath) << "\n";
     }
 
     return true;
@@ -55,7 +57,7 @@ bool SceneSerializer::Load(const std::string& filepath, Forge::Scene& scene, Wor
                 >> world.AmbientStrength >> world.SpecularStrength >> useTex;
             world.UseTexture = (useTex != 0);
         } else if (tag == "ENTITY") {
-            std::string name;
+            std::string name, meshPath, texPath;
             int shapeInt = 0, visInt = 1;
             glm::vec3 pos, rot, scale, color;
             iss >> std::quoted(name) >> shapeInt >> visInt
@@ -64,6 +66,10 @@ bool SceneSerializer::Load(const std::string& filepath, Forge::Scene& scene, Wor
                 >> scale.x >> scale.y >> scale.z
                 >> color.x >> color.y >> color.z;
 
+            if (iss >> std::quoted(meshPath)) {
+                iss >> std::quoted(texPath);
+            }
+
             auto& e = scene.CreateEntity(name);
             e.Shape                  = static_cast<Forge::MeshType>(shapeInt);
             e.Visible                = (visInt != 0);
@@ -71,6 +77,8 @@ bool SceneSerializer::Load(const std::string& filepath, Forge::Scene& scene, Wor
             e.TransformData.Rotation = rot;
             e.TransformData.Scale    = scale;
             e.Color                  = color;
+            e.MeshPath               = meshPath;
+            e.TexturePath            = texPath;
         }
     }
 
