@@ -77,7 +77,7 @@ void EditorApp::OnInit() {
     m_Grid        = std::make_unique<Forge::Grid>();
 
     SetupDefaultScene();
-    EditorUI::PushLog(m_State, "[INIT] ForgeEngine tayyor. OBJ va PNG/JPG import yoqilgan.");
+    EditorUI::PushLog(m_State, "[INIT] ForgeEngine tayyor. Fizika yoqilgan — Play bosib sinang!");
 }
 
 void EditorApp::OnUpdate(float dt) {
@@ -123,9 +123,7 @@ void EditorApp::OnUpdate(float dt) {
 
     auto& entities = m_Scene.GetEntities();
     if (m_State.IsPlaying && !m_State.IsPaused) {
-        for (size_t i = 1; i < entities.size(); ++i) {
-            entities[i].TransformData.Rotation.y += 50.0f * dt;
-        }
+        Forge::PhysicsWorld::Step(m_Scene, dt);
     }
 
     m_Framebuffer->Bind();
@@ -196,7 +194,7 @@ void EditorApp::OnImGuiRender() {
             SceneSerializer::Save(".play_backup.forge", m_Scene, m_State.World);
             m_State.IsPlaying = true;
             m_State.IsPaused  = false;
-            EditorUI::PushLog(m_State, "[PLAY] O'yin rejimi boshlandi.");
+            EditorUI::PushLog(m_State, "[PLAY] Fizika simulyatsiyasi boshlandi.");
         } else {
             m_State.IsPaused = false;
         }
@@ -246,21 +244,29 @@ void EditorApp::SetupDefaultScene() {
     floor.TransformData.Position = { 0.0f, -0.5f, 0.0f };
     floor.TransformData.Scale    = { 10.0f, 1.0f, 10.0f };
     floor.Color                  = { 0.45f, 0.50f, 0.55f };
+    floor.PhysicsEnabled         = true;
+    floor.IsStatic               = true;
 
     auto& cube = m_Scene.CreateEntity("MainCube");
     cube.Shape                  = Forge::MeshType::Cube;
-    cube.TransformData.Position = { -1.5f, 0.0f, 0.0f };
+    cube.TransformData.Position = { -1.5f, 2.2f, 0.0f };
     cube.Color                  = { 0.95f, 0.45f, 0.30f };
+    cube.PhysicsEnabled         = true;
+    cube.Bounciness             = 0.45f;
 
     auto& sphere = m_Scene.CreateEntity("Sphere");
     sphere.Shape                  = Forge::MeshType::Sphere;
-    sphere.TransformData.Position = { 0.0f, 0.0f, 0.0f };
+    sphere.TransformData.Position = { 0.0f, 3.2f, 0.0f };
     sphere.Color                  = { 0.30f, 0.70f, 1.00f };
+    sphere.PhysicsEnabled         = true;
+    sphere.Bounciness             = 0.70f;
 
     auto& pyramid = m_Scene.CreateEntity("Pyramid");
     pyramid.Shape                  = Forge::MeshType::Pyramid;
-    pyramid.TransformData.Position = { 1.5f, 0.0f, 0.0f };
+    pyramid.TransformData.Position = { 1.5f, 1.8f, 0.0f };
     pyramid.Color                  = { 0.95f, 0.80f, 0.25f };
+    pyramid.PhysicsEnabled         = true;
+    pyramid.Bounciness             = 0.25f;
 
     m_State.SelectedIndex = 1;
 }
@@ -274,7 +280,8 @@ void EditorApp::AddEntity(const std::string& baseName, Forge::MeshType type) {
     std::string name = baseName + "_" + std::to_string(m_Scene.GetEntities().size());
     auto& e = m_Scene.CreateEntity(name);
     e.Shape = type;
-    e.TransformData.Position = { 0.0f, 1.0f, 0.0f };
+    e.TransformData.Position = { 0.0f, 2.0f, 0.0f };
+    e.PhysicsEnabled = true;
     m_State.SelectedIndex = static_cast<int>(m_Scene.GetEntities().size()) - 1;
     EditorUI::PushLog(m_State, "[ENTITY] Qo'shildi: " + name);
 }
