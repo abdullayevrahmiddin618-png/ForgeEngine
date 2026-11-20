@@ -6,12 +6,16 @@
 #include <vector>
 
 struct EditorState {
-    int SelectedIndex      = 1;
-    bool IsPlaying         = false;
-    bool IsPaused          = false;
-    float LastDt           = 0.0f;
-    float CameraSpeed      = 4.0f;
-    float MouseSensitivity = 0.15f;
+    int SelectedIndex          = 1;
+    bool IsPlaying             = false;
+    bool IsPaused              = false;
+    bool ShowGrid              = true;
+    float LastDt               = 0.0f;
+    float CameraSpeed          = 4.0f;
+    float MouseSensitivity     = 0.15f;
+    uint32_t ViewportTextureID = 0;
+    glm::vec2 ViewportSize{ 800.0f, 450.0f };
+    bool ViewportHovered       = false;
     WorldSettings World;
     std::vector<std::string> Logs;
 };
