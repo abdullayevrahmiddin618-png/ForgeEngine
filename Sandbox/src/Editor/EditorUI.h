@@ -45,6 +45,8 @@ private:
     static bool MatchesFilter(const std::string& text, const char* filter);
 
     ViewportGizmo m_Gizmo;
-    bool m_ThemeApplied = false;
-    char m_SearchBuf[64] = "";
+    bool m_ThemeApplied    = false;
+    char m_SearchBuf[64]   = "";
+    char m_ObjPathBuf[256] = "Assets/model.obj";
+    char m_TexPathBuf[256] = "Assets/texture.png";
 };
