@@ -15,6 +15,12 @@ namespace Forge {
         bool Visible = true;
         std::string MeshPath;
         std::string TexturePath;
+
+        // Fizika (Physics)
+        bool PhysicsEnabled = false;
+        bool IsStatic       = false;
+        float Bounciness    = 0.35f;
+        glm::vec3 Velocity{ 0.0f, 0.0f, 0.0f };
     };
 
 }
