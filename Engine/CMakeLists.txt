@@ -77,6 +77,7 @@ add_library(ForgeEngine STATIC
     src/Renderer/Mesh.cpp
     src/Renderer/Framebuffer.cpp
     src/Renderer/Grid.cpp
+    src/Renderer/ObjLoader.cpp
     src/UI/ImGuiLayer.cpp
 )
 
