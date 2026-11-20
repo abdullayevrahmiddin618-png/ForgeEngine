@@ -71,7 +71,7 @@ void EditorUI::Render(Forge::Scene& scene, const Forge::Camera& camera, EditorSt
     float menuH   = 0.0f;
     float barH    = 38.0f;
     float leftW   = 245.0f;
-    float rightW  = 285.0f;
+    float rightW  = 295.0f;
     float bottomH = 165.0f;
 
     // 1. Top Menu
@@ -115,7 +115,7 @@ void EditorUI::Render(Forge::Scene& scene, const Forge::Camera& camera, EditorSt
         ImGuiWindowFlags_NoCollapse |
         ImGuiWindowFlags_NoBringToFrontOnFocus;
 
-    // 2. Action Bar (Save / Load | Move / Rotate / Scale | Play / Pause / Stop)
+    // 2. Action Bar
     ImGui::SetNextWindowPos(ImVec2(vp->Pos.x, vp->Pos.y + menuH));
     ImGui::SetNextWindowSize(ImVec2(vp->Size.x, barH));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 6.0f));
@@ -218,13 +218,42 @@ void EditorUI::Render(Forge::Scene& scene, const Forge::Camera& camera, EditorSt
                 }
             }
 
-            if (ImGui::CollapsingHeader("Mesh & Color", ImGuiTreeNodeFlags_DefaultOpen)) {
-                const char* shapes[] = { "Cube", "Sphere", "Pyramid", "Plane" };
+            if (ImGui::CollapsingHeader("Mesh & Material", ImGuiTreeNodeFlags_DefaultOpen)) {
+                const char* shapes[] = { "Cube", "Sphere", "Pyramid", "Plane", "Custom (.obj)" };
                 int current = static_cast<int>(e.Shape);
-                if (ImGui::Combo("Shape", &current, shapes, 4)) {
+                if (ImGui::Combo("Shape", &current, shapes, 5)) {
                     e.Shape = static_cast<Forge::MeshType>(current);
                 }
                 ImGui::ColorEdit3("Color", &e.Color.x);
+
+                ImGui::Spacing();
+                ImGui::TextDisabled("3D Model (.obj):");
+                ImGui::SetNextItemWidth(-1);
+                ImGui::InputText("##ObjPath", m_ObjPathBuf, sizeof(m_ObjPathBuf));
+                if (ImGui::Button("Load .OBJ", ImVec2(-1, 22))) {
+                    e.MeshPath = m_ObjPathBuf;
+                    e.Shape    = Forge::MeshType::Custom;
+                    PushLog(state, "[OBJ] Model ulandi: " + e.MeshPath);
+                }
+                if (!e.MeshPath.empty()) {
+                    ImGui::TextColored(ImVec4(0.55f, 0.85f, 0.55f, 1.0f), "Active: %s", e.MeshPath.c_str());
+                }
+
+                ImGui::Spacing();
+                ImGui::TextDisabled("Texture (.png / .jpg):");
+                ImGui::SetNextItemWidth(-1);
+                ImGui::InputText("##TexPath", m_TexPathBuf, sizeof(m_TexPathBuf));
+                if (ImGui::Button("Load Texture", ImVec2(145, 22))) {
+                    e.TexturePath = m_TexPathBuf;
+                    PushLog(state, "[TEX] Tekstura ulandi: " + e.TexturePath);
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Clear Tex", ImVec2(-1, 22))) {
+                    e.TexturePath.clear();
+                }
+                if (!e.TexturePath.empty()) {
+                    ImGui::TextColored(ImVec4(0.55f, 0.85f, 0.55f, 1.0f), "Active: %s", e.TexturePath.c_str());
+                }
             }
 
             ImGui::Spacing();
@@ -232,21 +261,14 @@ void EditorUI::Render(Forge::Scene& scene, const Forge::Camera& camera, EditorSt
             ImGui::Spacing();
 
             if (ImGui::Button("Duplicate", ImVec2(-1, 24))) {
-                auto pos   = e.TransformData.Position + glm::vec3(1.0f, 0.0f, 0.0f);
-                auto rot   = e.TransformData.Rotation;
-                auto scale = e.TransformData.Scale;
-                auto color = e.Color;
-                auto shape = e.Shape;
-                auto name  = e.Name + "_Copy";
+                auto copy = e;
+                copy.Name += "_Copy";
+                copy.TransformData.Position.x += 1.0f;
 
-                auto& ne = scene.CreateEntity(name);
-                ne.Shape                  = shape;
-                ne.TransformData.Position = pos;
-                ne.TransformData.Rotation = rot;
-                ne.TransformData.Scale    = scale;
-                ne.Color                  = color;
+                auto& ne = scene.CreateEntity(copy.Name);
+                ne = copy;
                 state.SelectedIndex = static_cast<int>(scene.GetEntities().size()) - 1;
-                PushLog(state, "[ENTITY] Nusxalandi: " + name);
+                PushLog(state, "[ENTITY] Nusxalandi: " + copy.Name);
             }
 
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.58f, 0.16f, 0.20f, 1.0f));
