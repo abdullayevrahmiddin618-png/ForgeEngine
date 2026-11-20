@@ -1,0 +1,289 @@
+#include "EditorUI.h"
+#include <algorithm>
+#include <cctype>
+#include <cstdio>
+
+void EditorUI::PushLog(EditorState& state, const std::string& msg) {
+    state.Logs.push_back(msg);
+    if (state.Logs.size() > 150) {
+        state.Logs.erase(state.Logs.begin());
+    }
+}
+
+bool EditorUI::MatchesFilter(const std::string& text, const char* filter) {
+    if (!filter || filter[0] == '\0') return true;
+    std::string a = text, b = filter;
+    std::transform(a.begin(), a.end(), a.begin(), ::tolower);
+    std::transform(b.begin(), b.end(), b.begin(), ::tolower);
+    return a.find(b) != std::string::npos;
+}
+
+void EditorUI::ApplyForgeTheme() {
+    ImGuiStyle& s = ImGui::GetStyle();
+    s.WindowRounding   = 0.0f;
+    s.FrameRounding    = 4.0f;
+    s.GrabRounding     = 4.0f;
+    s.TabRounding      = 4.0f;
+    s.WindowBorderSize = 1.0f;
+    s.FrameBorderSize  = 0.0f;
+    s.WindowPadding    = ImVec2(10.0f, 8.0f);
+    s.FramePadding     = ImVec2(6.0f, 4.0f);
+    s.ItemSpacing      = ImVec2(6.0f, 5.0f);
+
+    auto& c = s.Colors;
+    c[ImGuiCol_WindowBg]         = ImVec4(0.08f, 0.09f, 0.11f, 0.96f);
+    c[ImGuiCol_ChildBg]          = ImVec4(0.06f, 0.07f, 0.09f, 1.00f);
+    c[ImGuiCol_PopupBg]          = ImVec4(0.10f, 0.11f, 0.14f, 0.98f);
+    c[ImGuiCol_Border]           = ImVec4(0.16f, 0.19f, 0.24f, 1.00f);
+    c[ImGuiCol_TitleBg]          = ImVec4(0.06f, 0.07f, 0.09f, 1.00f);
+    c[ImGuiCol_TitleBgActive]    = ImVec4(0.09f, 0.11f, 0.14f, 1.00f);
+    c[ImGuiCol_MenuBarBg]        = ImVec4(0.06f, 0.07f, 0.09f, 1.00f);
+
+    // ForgeEngine Cyan-Blue Accent
+    c[ImGuiCol_Header]           = ImVec4(0.10f, 0.42f, 0.58f, 0.85f);
+    c[ImGuiCol_HeaderHovered]    = ImVec4(0.14f, 0.54f, 0.72f, 0.90f);
+    c[ImGuiCol_HeaderActive]     = ImVec4(0.16f, 0.64f, 0.85f, 1.00f);
+
+    c[ImGuiCol_Button]           = ImVec4(0.14f, 0.17f, 0.22f, 1.00f);
+    c[ImGuiCol_ButtonHovered]    = ImVec4(0.16f, 0.48f, 0.65f, 1.00f);
+    c[ImGuiCol_ButtonActive]     = ImVec4(0.18f, 0.62f, 0.82f, 1.00f);
+
+    c[ImGuiCol_FrameBg]          = ImVec4(0.12f, 0.14f, 0.18f, 1.00f);
+    c[ImGuiCol_FrameBgHovered]   = ImVec4(0.16f, 0.19f, 0.24f, 1.00f);
+    c[ImGuiCol_FrameBgActive]    = ImVec4(0.20f, 0.24f, 0.30f, 1.00f);
+
+    c[ImGuiCol_Tab]              = ImVec4(0.10f, 0.12f, 0.15f, 1.00f);
+    c[ImGuiCol_TabHovered]       = ImVec4(0.16f, 0.48f, 0.65f, 1.00f);
+    c[ImGuiCol_TabActive]        = ImVec4(0.12f, 0.44f, 0.62f, 1.00f);
+
+    c[ImGuiCol_CheckMark]        = ImVec4(0.24f, 0.78f, 0.96f, 1.00f);
+    c[ImGuiCol_SliderGrab]       = ImVec4(0.20f, 0.66f, 0.86f, 1.00f);
+    c[ImGuiCol_SliderGrabActive] = ImVec4(0.30f, 0.80f, 1.00f, 1.00f);
+}
+
+void EditorUI::Render(Forge::Scene& scene, EditorState& state, const EditorCallbacks& cb) {
+    if (!m_ThemeApplied) {
+        ApplyForgeTheme();
+        m_ThemeApplied = true;
+    }
+
+    const ImGuiViewport* vp = ImGui::GetMainViewport();
+    float menuH   = 0.0f;
+    float barH    = 38.0f;
+    float leftW   = 245.0f;
+    float rightW  = 285.0f;
+    float bottomH = 165.0f;
+
+    // 1. Top Menu
+    if (ImGui::BeginMainMenuBar()) {
+        menuH = ImGui::GetWindowHeight();
+
+        if (ImGui::BeginMenu("Scene")) {
+            if (ImGui::MenuItem("New Scene"))            cb.OnNewScene();
+            if (ImGui::MenuItem("Save (scene.forge)"))   cb.OnSaveScene();
+            if (ImGui::MenuItem("Load (scene.forge)"))   cb.OnLoadScene();
+            ImGui::Separator();
+            if (ImGui::MenuItem("Exit", "ESC"))          cb.OnExit();
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("Create")) {
+            if (ImGui::MenuItem("Cube"))    cb.OnAddEntity("Cube", Forge::MeshType::Cube);
+            if (ImGui::MenuItem("Sphere"))  cb.OnAddEntity("Sphere", Forge::MeshType::Sphere);
+            if (ImGui::MenuItem("Pyramid")) cb.OnAddEntity("Pyramid", Forge::MeshType::Pyramid);
+            if (ImGui::MenuItem("Plane"))   cb.OnAddEntity("Plane", Forge::MeshType::Plane);
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("Camera")) {
+            if (ImGui::MenuItem("Reset Camera")) cb.OnResetCamera();
+            ImGui::EndMenu();
+        }
+
+        float fps = (state.LastDt > 0.0f) ? (1.0f / state.LastDt) : 0.0f;
+        char buf[64];
+        std::snprintf(buf, sizeof(buf), "ForgeEngine  |  %.0f FPS (%.1f ms)", fps, state.LastDt * 1000.0f);
+        ImGui::SetCursorPosX(vp->Size.x - ImGui::CalcTextSize(buf).x - 14.0f);
+        ImGui::TextColored(ImVec4(0.30f, 0.82f, 0.96f, 1.0f), "%s", buf);
+
+        ImGui::EndMainMenuBar();
+    }
+
+    ImGuiWindowFlags flags =
+        ImGuiWindowFlags_NoMove |
+        ImGuiWindowFlags_NoResize |
+        ImGuiWindowFlags_NoCollapse |
+        ImGuiWindowFlags_NoBringToFrontOnFocus;
+
+    // 2. Action Bar (Save / Load / Play / Pause / Stop)
+    ImGui::SetNextWindowPos(ImVec2(vp->Pos.x, vp->Pos.y + menuH));
+    ImGui::SetNextWindowSize(ImVec2(vp->Size.x, barH));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 6.0f));
+    ImGui::Begin("##ActionBar", nullptr, flags | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar);
+    {
+        if (ImGui::Button("Save", ImVec2(60, 24))) cb.OnSaveScene();
+        ImGui::SameLine();
+        if (ImGui::Button("Load", ImVec2(60, 24))) cb.OnLoadScene();
+
+        float centerW = 70.0f * 3.0f + 12.0f;
+        ImGui::SameLine();
+        ImGui::SetCursorPosX((vp->Size.x - centerW) * 0.5f);
+
+        ImGui::PushStyleColor(ImGuiCol_Button, (state.IsPlaying && !state.IsPaused)
+            ? ImVec4(0.14f, 0.58f, 0.30f, 1.0f) : ImVec4(0.16f, 0.20f, 0.25f, 1.0f));
+        if (ImGui::Button("Play", ImVec2(70, 24))) cb.OnPlay();
+        ImGui::PopStyleColor();
+
+        ImGui::SameLine();
+        ImGui::PushStyleColor(ImGuiCol_Button, (state.IsPlaying && state.IsPaused)
+            ? ImVec4(0.75f, 0.52f, 0.12f, 1.0f) : ImVec4(0.16f, 0.20f, 0.25f, 1.0f));
+        if (ImGui::Button("Pause", ImVec2(70, 24))) cb.OnPause();
+        ImGui::PopStyleColor();
+
+        ImGui::SameLine();
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.58f, 0.16f, 0.20f, 1.0f));
+        if (ImGui::Button("Stop", ImVec2(70, 24))) cb.OnStop();
+        ImGui::PopStyleColor();
+    }
+    ImGui::End();
+    ImGui::PopStyleVar();
+
+    float topY = menuH + barH;
+    float midH = vp->Size.y - topY - bottomH;
+
+    // 3. Left Panel: Scene Hierarchy
+    ImGui::SetNextWindowPos(ImVec2(vp->Pos.x, vp->Pos.y + topY));
+    ImGui::SetNextWindowSize(ImVec2(leftW, midH));
+    ImGui::Begin("Scene", nullptr, flags);
+    {
+        if (ImGui::Button("+ Cube", ImVec2(70, 0)))    cb.OnAddEntity("Cube", Forge::MeshType::Cube);
+        ImGui::SameLine();
+        if (ImGui::Button("+ Sphere", ImVec2(70, 0)))  cb.OnAddEntity("Sphere", Forge::MeshType::Sphere);
+        ImGui::SameLine();
+        if (ImGui::Button("+ Pyr", ImVec2(70, 0)))     cb.OnAddEntity("Pyramid", Forge::MeshType::Pyramid);
+
+        ImGui::SetNextItemWidth(-1);
+        ImGui::InputTextWithHint("##Filter", "Qidirish...", m_SearchBuf, sizeof(m_SearchBuf));
+        ImGui::Separator();
+
+        auto& entities = scene.GetEntities();
+        for (int i = 0; i < static_cast<int>(entities.size()); ++i) {
+            if (!MatchesFilter(entities[i].Name, m_SearchBuf)) continue;
+            ImGui::PushID(i);
+            ImGui::Checkbox("##v", &entities[i].Visible);
+            ImGui::SameLine();
+            if (ImGui::Selectable(entities[i].Name.c_str(), state.SelectedIndex == i)) {
+                state.SelectedIndex = i;
+            }
+            ImGui::PopID();
+        }
+    }
+    ImGui::End();
+
+    // 4. Right Panel: Properties
+    ImGui::SetNextWindowPos(ImVec2(vp->Pos.x + vp->Size.x - rightW, vp->Pos.y + topY));
+    ImGui::SetNextWindowSize(ImVec2(rightW, midH));
+    ImGui::Begin("Properties", nullptr, flags);
+    {
+        auto& entities = scene.GetEntities();
+        if (state.SelectedIndex >= 0 && state.SelectedIndex < static_cast<int>(entities.size())) {
+            auto& e = entities[state.SelectedIndex];
+            ImGui::TextColored(ImVec4(0.30f, 0.82f, 0.96f, 1.0f), "%s", e.Name.c_str());
+            ImGui::Separator();
+
+            if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
+                ImGui::DragFloat3("Position", &e.TransformData.Position.x, 0.05f);
+                ImGui::DragFloat3("Rotation", &e.TransformData.Rotation.x, 1.0f);
+                ImGui::DragFloat3("Scale",    &e.TransformData.Scale.x,    0.05f);
+                if (ImGui::SmallButton("Reset Transform")) {
+                    e.TransformData.Position = { 0.0f, 0.0f, 0.0f };
+                    e.TransformData.Rotation = { 0.0f, 0.0f, 0.0f };
+                    e.TransformData.Scale    = { 1.0f, 1.0f, 1.0f };
+                }
+            }
+
+            if (ImGui::CollapsingHeader("Mesh & Color", ImGuiTreeNodeFlags_DefaultOpen)) {
+                const char* shapes[] = { "Cube", "Sphere", "Pyramid", "Plane" };
+                int current = static_cast<int>(e.Shape);
+                if (ImGui::Combo("Shape", &current, shapes, 4)) {
+                    e.Shape = static_cast<Forge::MeshType>(current);
+                }
+                ImGui::ColorEdit3("Color", &e.Color.x);
+            }
+
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            if (ImGui::Button("Duplicate", ImVec2(-1, 24))) {
+                auto pos   = e.TransformData.Position + glm::vec3(1.0f, 0.0f, 0.0f);
+                auto rot   = e.TransformData.Rotation;
+                auto scale = e.TransformData.Scale;
+                auto color = e.Color;
+                auto shape = e.Shape;
+                auto name  = e.Name + "_Copy";
+
+                auto& ne = scene.CreateEntity(name);
+                ne.Shape                  = shape;
+                ne.TransformData.Position = pos;
+                ne.TransformData.Rotation = rot;
+                ne.TransformData.Scale    = scale;
+                ne.Color                  = color;
+                state.SelectedIndex = static_cast<int>(scene.GetEntities().size()) - 1;
+                PushLog(state, "[ENTITY] Nusxalandi: " + name);
+            }
+
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.58f, 0.16f, 0.20f, 1.0f));
+            if (ImGui::Button("Delete", ImVec2(-1, 24))) {
+                PushLog(state, "[ENTITY] O'chirildi: " + e.Name);
+                scene.RemoveEntity(static_cast<size_t>(state.SelectedIndex));
+                state.SelectedIndex = -1;
+            }
+            ImGui::PopStyleColor();
+        } else {
+            ImGui::TextDisabled("Scene panelidan obyekt tanlang.");
+        }
+    }
+    ImGui::End();
+
+    // 5. Bottom Panel: Console & World Settings
+    ImGui::SetNextWindowPos(ImVec2(vp->Pos.x, vp->Pos.y + vp->Size.y - bottomH));
+    ImGui::SetNextWindowSize(ImVec2(vp->Size.x, bottomH));
+    ImGui::Begin("##BottomPanel", nullptr, flags | ImGuiWindowFlags_NoTitleBar);
+    {
+        if (ImGui::BeginTabBar("BottomTabs")) {
+            if (ImGui::BeginTabItem("Console")) {
+                if (ImGui::SmallButton("Clear")) state.Logs.clear();
+                ImGui::Separator();
+                ImGui::BeginChild("LogScroll", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
+                for (const auto& line : state.Logs) {
+                    ImGui::TextUnformatted(line.c_str());
+                }
+                if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) {
+                    ImGui::SetScrollHereY(1.0f);
+                }
+                ImGui::EndChild();
+                ImGui::EndTabItem();
+            }
+
+            if (ImGui::BeginTabItem("World & Camera")) {
+                ImGui::Columns(2, nullptr, false);
+                ImGui::DragFloat3("Light Position", &state.World.LightPos.x, 0.1f);
+                ImGui::ColorEdit3("Light Color", &state.World.LightColor.x);
+                ImGui::SliderFloat("Ambient", &state.World.AmbientStrength, 0.0f, 1.0f);
+                ImGui::SliderFloat("Specular", &state.World.SpecularStrength, 0.0f, 2.0f);
+
+                ImGui::NextColumn();
+                ImGui::ColorEdit3("Sky Color", &state.World.ClearColor.x);
+                ImGui::SliderFloat("Camera Speed", &state.CameraSpeed, 1.0f, 15.0f);
+                ImGui::SliderFloat("Sensitivity", &state.MouseSensitivity, 0.05f, 0.5f);
+                ImGui::Checkbox("Checker Texture", &state.World.UseTexture);
+                ImGui::Columns(1);
+                ImGui::EndTabItem();
+            }
+
+            ImGui::EndTabBar();
+        }
+    }
+    ImGui::End();
+}
