@@ -219,7 +219,7 @@ void EditorApp::OnImGuiRender() {
         AddEntity(name, type);
     };
 
-    m_UI.Render(m_Scene, m_State, cb);
+    m_UI.Render(m_Scene, m_Camera, m_State, cb);
 }
 
 void EditorApp::OnShutdown() {
