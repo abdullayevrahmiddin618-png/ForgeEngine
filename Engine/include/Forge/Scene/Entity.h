@@ -13,6 +13,8 @@ namespace Forge {
         Transform TransformData;
         glm::vec3 Color{ 0.8f, 0.8f, 0.8f };
         bool Visible = true;
+        std::string MeshPath;
+        std::string TexturePath;
     };
 
 }
