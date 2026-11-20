@@ -2,6 +2,7 @@
 
 #include "Forge/Renderer/VertexArray.h"
 #include <memory>
+#include <string>
 
 namespace Forge {
 
@@ -9,7 +10,8 @@ namespace Forge {
         Cube = 0,
         Sphere,
         Pyramid,
-        Plane
+        Plane,
+        Custom
     };
 
     class Mesh {
@@ -18,6 +20,7 @@ namespace Forge {
         static std::unique_ptr<VertexArray> CreatePlane();
         static std::unique_ptr<VertexArray> CreatePyramid();
         static std::unique_ptr<VertexArray> CreateSphere(int sectors = 24, int stacks = 16);
+        static std::unique_ptr<VertexArray> LoadOBJ(const std::string& filepath);
     };
 
 }
