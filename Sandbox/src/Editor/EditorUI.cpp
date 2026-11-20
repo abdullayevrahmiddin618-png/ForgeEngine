@@ -256,6 +256,16 @@ void EditorUI::Render(Forge::Scene& scene, const Forge::Camera& camera, EditorSt
                 }
             }
 
+            if (ImGui::CollapsingHeader("Physics", ImGuiTreeNodeFlags_DefaultOpen)) {
+                ImGui::Checkbox("Enable Physics", &e.PhysicsEnabled);
+                if (e.PhysicsEnabled) {
+                    ImGui::Checkbox("Static (Qimirlamas)", &e.IsStatic);
+                    if (!e.IsStatic) {
+                        ImGui::SliderFloat("Bounciness", &e.Bounciness, 0.0f, 0.95f);
+                    }
+                }
+            }
+
             ImGui::Spacing();
             ImGui::Separator();
             ImGui::Spacing();
