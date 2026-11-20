@@ -77,7 +77,7 @@ void EditorApp::OnInit() {
     m_Grid        = std::make_unique<Forge::Grid>();
 
     SetupDefaultScene();
-    EditorUI::PushLog(m_State, "[INIT] ForgeEngine tayyor. Boshqaruv: Viewport ichida RMB + WASD/QE.");
+    EditorUI::PushLog(m_State, "[INIT] ForgeEngine tayyor. OBJ va PNG/JPG import yoqilgan.");
 }
 
 void EditorApp::OnUpdate(float dt) {
@@ -87,7 +87,6 @@ void EditorApp::OnUpdate(float dt) {
         Close();
     }
 
-    // Viewport o'lchami o'zgarsa Framebuffer va Kamerani moslash
     uint32_t vpW = static_cast<uint32_t>(m_State.ViewportSize.x);
     uint32_t vpH = static_cast<uint32_t>(m_State.ViewportSize.y);
     if (vpW > 0 && vpH > 0 && (vpW != m_Framebuffer->GetWidth() || vpH != m_Framebuffer->GetHeight())) {
@@ -129,13 +128,11 @@ void EditorApp::OnUpdate(float dt) {
         }
     }
 
-    // 3D sahnani Framebuffer ichiga chizish
     m_Framebuffer->Bind();
     const auto& w = m_State.World;
     Forge::Renderer::SetClearColor(w.ClearColor.x, w.ClearColor.y, w.ClearColor.z, 1.0f);
     Forge::Renderer::Clear();
 
-    m_Texture->Bind(0);
     m_Shader->Bind();
     m_Shader->SetMat4("u_ViewProjection", m_Camera.GetViewProjectionMatrix());
     m_Shader->SetVec3("u_LightPos", w.LightPos);
@@ -144,13 +141,22 @@ void EditorApp::OnUpdate(float dt) {
     m_Shader->SetFloat("u_AmbientStrength", w.AmbientStrength);
     m_Shader->SetFloat("u_SpecularStrength", w.SpecularStrength);
     m_Shader->SetInt("u_Texture", 0);
-    m_Shader->SetInt("u_UseTexture", w.UseTexture ? 1 : 0);
 
     for (const auto& entity : entities) {
         if (!entity.Visible) continue;
+
+        const Forge::Texture* customTex = GetEntityTexture(entity);
+        if (customTex) {
+            customTex->Bind(0);
+            m_Shader->SetInt("u_UseTexture", 1);
+        } else {
+            m_Texture->Bind(0);
+            m_Shader->SetInt("u_UseTexture", w.UseTexture ? 1 : 0);
+        }
+
         m_Shader->SetMat4("u_Model", entity.TransformData.GetModelMatrix());
         m_Shader->SetVec3("u_ObjectColor", entity.Color);
-        Forge::Renderer::Draw(GetMesh(entity.Shape), *m_Shader);
+        Forge::Renderer::Draw(GetEntityMesh(entity), *m_Shader);
     }
 
     if (m_State.ShowGrid) {
@@ -160,7 +166,6 @@ void EditorApp::OnUpdate(float dt) {
     m_Framebuffer->Unbind();
     m_State.ViewportTextureID = m_Framebuffer->GetColorAttachmentID();
 
-    // Asosiy oyna fonini tozalash (UI uchun)
     Forge::Renderer::SetClearColor(0.05f, 0.05f, 0.06f, 1.0f);
     Forge::Renderer::Clear();
 }
@@ -223,6 +228,8 @@ void EditorApp::OnImGuiRender() {
 }
 
 void EditorApp::OnShutdown() {
+    m_CustomTextures.clear();
+    m_CustomMeshes.clear();
     m_Grid.reset();
     m_Framebuffer.reset();
     m_PlaneMesh.reset();
@@ -272,12 +279,37 @@ void EditorApp::AddEntity(const std::string& baseName, Forge::MeshType type) {
     EditorUI::PushLog(m_State, "[ENTITY] Qo'shildi: " + name);
 }
 
-const Forge::VertexArray& EditorApp::GetMesh(Forge::MeshType type) const {
-    switch (type) {
+const Forge::VertexArray& EditorApp::GetEntityMesh(const Forge::Entity& entity) {
+    if (entity.Shape == Forge::MeshType::Custom && !entity.MeshPath.empty()) {
+        auto it = m_CustomMeshes.find(entity.MeshPath);
+        if (it == m_CustomMeshes.end()) {
+            auto loaded = Forge::Mesh::LoadOBJ(entity.MeshPath);
+            it = m_CustomMeshes.emplace(entity.MeshPath, std::move(loaded)).first;
+        }
+        if (it->second) {
+            return *it->second;
+        }
+    }
+
+    switch (entity.Shape) {
         case Forge::MeshType::Sphere:  return *m_SphereMesh;
         case Forge::MeshType::Pyramid: return *m_PyramidMesh;
         case Forge::MeshType::Plane:   return *m_PlaneMesh;
         case Forge::MeshType::Cube:
         default:                       return *m_CubeMesh;
     }
+}
+
+const Forge::Texture* EditorApp::GetEntityTexture(const Forge::Entity& entity) {
+    if (entity.TexturePath.empty()) return nullptr;
+
+    auto it = m_CustomTextures.find(entity.TexturePath);
+    if (it == m_CustomTextures.end()) {
+        auto tex = std::make_unique<Forge::Texture>(entity.TexturePath);
+        if (tex->GetWidth() == 0) {
+            tex.reset();
+        }
+        it = m_CustomTextures.emplace(entity.TexturePath, std::move(tex)).first;
+    }
+    return it->second.get();
 }
