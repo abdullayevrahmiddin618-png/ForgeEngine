@@ -73,9 +73,11 @@ void EditorApp::OnInit() {
     m_SphereMesh  = Forge::Mesh::CreateSphere(32, 20);
     m_PyramidMesh = Forge::Mesh::CreatePyramid();
     m_PlaneMesh   = Forge::Mesh::CreatePlane();
+    m_Framebuffer = std::make_unique<Forge::Framebuffer>(800, 450);
+    m_Grid        = std::make_unique<Forge::Grid>();
 
     SetupDefaultScene();
-    EditorUI::PushLog(m_State, "[INIT] ForgeEngine tayyor. Boshqaruv: RMB + WASD/QE.");
+    EditorUI::PushLog(m_State, "[INIT] ForgeEngine tayyor. Boshqaruv: Viewport ichida RMB + WASD/QE.");
 }
 
 void EditorApp::OnUpdate(float dt) {
@@ -85,8 +87,16 @@ void EditorApp::OnUpdate(float dt) {
         Close();
     }
 
+    // Viewport o'lchami o'zgarsa Framebuffer va Kamerani moslash
+    uint32_t vpW = static_cast<uint32_t>(m_State.ViewportSize.x);
+    uint32_t vpH = static_cast<uint32_t>(m_State.ViewportSize.y);
+    if (vpW > 0 && vpH > 0 && (vpW != m_Framebuffer->GetWidth() || vpH != m_Framebuffer->GetHeight())) {
+        m_Framebuffer->Resize(vpW, vpH);
+        m_Camera.SetAspectRatio(static_cast<float>(vpW) / static_cast<float>(vpH));
+    }
+
     auto [mouseX, mouseY] = Forge::Input::GetMousePosition();
-    if (Forge::Input::IsMouseButtonPressed(Forge::Mouse::Right) && !ImGui::GetIO().WantCaptureMouse) {
+    if (Forge::Input::IsMouseButtonPressed(Forge::Mouse::Right) && (m_State.ViewportHovered || m_IsLooking)) {
         if (!m_IsLooking) {
             m_LastMouseX = mouseX;
             m_LastMouseY = mouseY;
@@ -101,7 +111,7 @@ void EditorApp::OnUpdate(float dt) {
         m_IsLooking = false;
     }
 
-    if (!ImGui::GetIO().WantTextInput) {
+    if (!ImGui::GetIO().WantTextInput && (m_State.ViewportHovered || m_IsLooking)) {
         float speed = m_State.CameraSpeed * dt;
         if (Forge::Input::IsKeyPressed(Forge::Key::LeftShift)) speed *= 2.0f;
         if (Forge::Input::IsKeyPressed(Forge::Key::W)) m_Camera.Move( m_Camera.GetFront() * speed);
@@ -119,6 +129,8 @@ void EditorApp::OnUpdate(float dt) {
         }
     }
 
+    // 3D sahnani Framebuffer ichiga chizish
+    m_Framebuffer->Bind();
     const auto& w = m_State.World;
     Forge::Renderer::SetClearColor(w.ClearColor.x, w.ClearColor.y, w.ClearColor.z, 1.0f);
     Forge::Renderer::Clear();
@@ -140,6 +152,17 @@ void EditorApp::OnUpdate(float dt) {
         m_Shader->SetVec3("u_ObjectColor", entity.Color);
         Forge::Renderer::Draw(GetMesh(entity.Shape), *m_Shader);
     }
+
+    if (m_State.ShowGrid) {
+        m_Grid->Draw(m_Camera);
+    }
+
+    m_Framebuffer->Unbind();
+    m_State.ViewportTextureID = m_Framebuffer->GetColorAttachmentID();
+
+    // Asosiy oyna fonini tozalash (UI uchun)
+    Forge::Renderer::SetClearColor(0.05f, 0.05f, 0.06f, 1.0f);
+    Forge::Renderer::Clear();
 }
 
 void EditorApp::OnImGuiRender() {
@@ -200,6 +223,8 @@ void EditorApp::OnImGuiRender() {
 }
 
 void EditorApp::OnShutdown() {
+    m_Grid.reset();
+    m_Framebuffer.reset();
     m_PlaneMesh.reset();
     m_PyramidMesh.reset();
     m_SphereMesh.reset();
