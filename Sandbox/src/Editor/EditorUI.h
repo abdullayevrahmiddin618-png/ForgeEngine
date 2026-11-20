@@ -1,6 +1,8 @@
 #pragma once
 #include <Forge/Forge.h>
 #include "SceneSerializer.h"
+#include "ViewportGizmo.h"
+#include <cstdint>
 #include <functional>
 #include <string>
 #include <vector>
@@ -10,6 +12,7 @@ struct EditorState {
     bool IsPlaying             = false;
     bool IsPaused              = false;
     bool ShowGrid              = true;
+    GizmoMode ActiveGizmo      = GizmoMode::Translate;
     float LastDt               = 0.0f;
     float CameraSpeed          = 4.0f;
     float MouseSensitivity     = 0.15f;
@@ -34,13 +37,14 @@ struct EditorCallbacks {
 
 class EditorUI {
 public:
-    void Render(Forge::Scene& scene, EditorState& state, const EditorCallbacks& cb);
+    void Render(Forge::Scene& scene, const Forge::Camera& camera, EditorState& state, const EditorCallbacks& cb);
     static void PushLog(EditorState& state, const std::string& msg);
 
 private:
     void ApplyForgeTheme();
     static bool MatchesFilter(const std::string& text, const char* filter);
 
+    ViewportGizmo m_Gizmo;
     bool m_ThemeApplied = false;
     char m_SearchBuf[64] = "";
 };
