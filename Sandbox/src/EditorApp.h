@@ -3,6 +3,7 @@
 #include "Editor/EditorUI.h"
 #include <memory>
 #include <string>
+#include <unordered_map>
 
 class EditorApp : public Forge::Application {
 public:
@@ -18,7 +19,8 @@ private:
     void SetupDefaultScene();
     void ResetCamera();
     void AddEntity(const std::string& baseName, Forge::MeshType type);
-    const Forge::VertexArray& GetMesh(Forge::MeshType type) const;
+    const Forge::VertexArray& GetEntityMesh(const Forge::Entity& entity);
+    const Forge::Texture* GetEntityTexture(const Forge::Entity& entity);
 
     Forge::Camera m_Camera;
     Forge::Scene m_Scene;
@@ -33,6 +35,9 @@ private:
     std::unique_ptr<Forge::VertexArray> m_PlaneMesh;
     std::unique_ptr<Forge::Framebuffer> m_Framebuffer;
     std::unique_ptr<Forge::Grid> m_Grid;
+
+    std::unordered_map<std::string, std::unique_ptr<Forge::VertexArray>> m_CustomMeshes;
+    std::unordered_map<std::string, std::unique_ptr<Forge::Texture>> m_CustomTextures;
 
     bool m_IsLooking   = false;
     float m_LastMouseX = 0.0f;
