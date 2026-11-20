@@ -3,6 +3,7 @@ add_executable(Sandbox
     src/EditorApp.cpp
     src/Editor/EditorUI.cpp
     src/Editor/SceneSerializer.cpp
+    src/Editor/ViewportGizmo.cpp
 )
 
 target_include_directories(Sandbox PRIVATE
