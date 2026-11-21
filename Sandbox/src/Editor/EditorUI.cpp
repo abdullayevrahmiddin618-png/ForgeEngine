@@ -64,7 +64,7 @@ void EditorUI::ApplyForgeTheme() {
 
 void EditorUI::HandleHotkeys(Forge::Scene& scene, EditorState& state, const EditorCallbacks& cb) {
     ImGuiIO& io = ImGui::GetIO();
-    if (io.WantTextInput || ImGui::IsMouseDown(ImGuiMouseButton_Right)) return;
+    if (io.WantTextInput || ImGui::IsMouseDown(ImGuiMouseButton_Right) || state.IsPlaying) return;
 
     // Gizmo shortcuts: 1 = Move, 2 = Rotate, 3 = Scale
     if (ImGui::IsKeyPressed(ImGuiKey_1, false)) state.ActiveGizmo = GizmoMode::Translate;
@@ -90,6 +90,7 @@ void EditorUI::HandleHotkeys(Forge::Scene& scene, EditorState& state, const Edit
         auto copy = entities[state.SelectedIndex];
         copy.Name += "_Copy";
         copy.TransformData.Position.x += 1.0f;
+        copy.ScriptInstance = nullptr;
         auto& ne = scene.CreateEntity(copy.Name);
         ne = copy;
         state.SelectedIndex = static_cast<int>(scene.GetEntities().size()) - 1;
@@ -318,6 +319,24 @@ void EditorUI::Render(Forge::Scene& scene, const Forge::Camera& camera, EditorSt
                 }
             }
 
+            if (ImGui::CollapsingHeader("C++ Script", ImGuiTreeNodeFlags_DefaultOpen)) {
+                const char* preview = e.ScriptName.empty() ? "None" : e.ScriptName.c_str();
+                if (ImGui::BeginCombo("Script", preview)) {
+                    if (ImGui::Selectable("None", e.ScriptName.empty())) {
+                        e.ScriptName.clear();
+                        e.ScriptInstance.reset();
+                    }
+                    for (const auto& name : Forge::ScriptRegistry::GetRegisteredNames()) {
+                        bool selected = (e.ScriptName == name);
+                        if (ImGui::Selectable(name.c_str(), selected)) {
+                            e.ScriptName = name;
+                            PushLog(state, "[SCRIPT] Attached '" + name + "' to " + e.Name);
+                        }
+                    }
+                    ImGui::EndCombo();
+                }
+            }
+
             ImGui::Spacing();
             ImGui::Separator();
             ImGui::Spacing();
@@ -326,6 +345,7 @@ void EditorUI::Render(Forge::Scene& scene, const Forge::Camera& camera, EditorSt
                 auto copy = e;
                 copy.Name += "_Copy";
                 copy.TransformData.Position.x += 1.0f;
+                copy.ScriptInstance = nullptr;
 
                 auto& ne = scene.CreateEntity(copy.Name);
                 ne = copy;
@@ -370,15 +390,17 @@ void EditorUI::Render(Forge::Scene& scene, const Forge::Camera& camera, EditorSt
                 ImVec2(1.0f, 0.0f)
             );
 
-            m_Gizmo.UpdateAndDraw(
-                scene,
-                camera,
-                state.SelectedIndex,
-                state.ActiveGizmo,
-                { imgPos.x, imgPos.y },
-                { avail.x, avail.y },
-                state.ViewportHovered
-            );
+            if (!state.IsPlaying) {
+                m_Gizmo.UpdateAndDraw(
+                    scene,
+                    camera,
+                    state.SelectedIndex,
+                    state.ActiveGizmo,
+                    { imgPos.x, imgPos.y },
+                    { avail.x, avail.y },
+                    state.ViewportHovered
+                );
+            }
         }
     }
     ImGui::End();
