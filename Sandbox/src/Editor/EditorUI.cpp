@@ -3,6 +3,7 @@
 #include <cctype>
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
 
 void EditorUI::PushLog(EditorState& state, const std::string& msg) {
     state.Logs.push_back(msg);
@@ -61,11 +62,55 @@ void EditorUI::ApplyForgeTheme() {
     c[ImGuiCol_SliderGrabActive] = ImVec4(0.30f, 0.80f, 1.00f, 1.00f);
 }
 
+void EditorUI::HandleHotkeys(Forge::Scene& scene, EditorState& state, const EditorCallbacks& cb) {
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.WantTextInput || ImGui::IsMouseDown(ImGuiMouseButton_Right)) return;
+
+    // Gizmo shortcuts: 1 = Move, 2 = Rotate, 3 = Scale
+    if (ImGui::IsKeyPressed(ImGuiKey_1, false)) state.ActiveGizmo = GizmoMode::Translate;
+    if (ImGui::IsKeyPressed(ImGuiKey_2, false)) state.ActiveGizmo = GizmoMode::Rotate;
+    if (ImGui::IsKeyPressed(ImGuiKey_3, false)) state.ActiveGizmo = GizmoMode::Scale;
+
+    // Ctrl + S: Save Scene
+    if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S, false)) {
+        cb.OnSaveScene();
+    }
+
+    auto& entities = scene.GetEntities();
+    bool hasSelection = (state.SelectedIndex >= 0 && state.SelectedIndex < static_cast<int>(entities.size()));
+    if (!hasSelection) return;
+
+    // F: Focus Camera on Selected Entity
+    if (ImGui::IsKeyPressed(ImGuiKey_F, false) && cb.OnFocusEntity) {
+        cb.OnFocusEntity();
+    }
+
+    // Ctrl + D: Duplicate Selected Entity
+    if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_D, false)) {
+        auto copy = entities[state.SelectedIndex];
+        copy.Name += "_Copy";
+        copy.TransformData.Position.x += 1.0f;
+        auto& ne = scene.CreateEntity(copy.Name);
+        ne = copy;
+        state.SelectedIndex = static_cast<int>(scene.GetEntities().size()) - 1;
+        PushLog(state, "[ENTITY] Duplicated: " + copy.Name);
+    }
+
+    // Delete: Remove Selected Entity
+    if (ImGui::IsKeyPressed(ImGuiKey_Delete, false)) {
+        PushLog(state, "[ENTITY] Deleted: " + entities[state.SelectedIndex].Name);
+        scene.RemoveEntity(static_cast<size_t>(state.SelectedIndex));
+        state.SelectedIndex = -1;
+    }
+}
+
 void EditorUI::Render(Forge::Scene& scene, const Forge::Camera& camera, EditorState& state, const EditorCallbacks& cb) {
     if (!m_ThemeApplied) {
         ApplyForgeTheme();
         m_ThemeApplied = true;
     }
+
+    HandleHotkeys(scene, state, cb);
 
     const ImGuiViewport* vp = ImGui::GetMainViewport();
     float menuH   = 0.0f;
@@ -79,11 +124,11 @@ void EditorUI::Render(Forge::Scene& scene, const Forge::Camera& camera, EditorSt
         menuH = ImGui::GetWindowHeight();
 
         if (ImGui::BeginMenu("File")) {
-            if (ImGui::MenuItem("New Scene"))            cb.OnNewScene();
-            if (ImGui::MenuItem("Save Scene"))           cb.OnSaveScene();
-            if (ImGui::MenuItem("Load Scene"))           cb.OnLoadScene();
+            if (ImGui::MenuItem("New Scene"))               cb.OnNewScene();
+            if (ImGui::MenuItem("Save Scene", "Ctrl+S"))    cb.OnSaveScene();
+            if (ImGui::MenuItem("Load Scene"))              cb.OnLoadScene();
             ImGui::Separator();
-            if (ImGui::MenuItem("Exit", "ESC"))          cb.OnExit();
+            if (ImGui::MenuItem("Exit", "ESC"))             cb.OnExit();
             ImGui::EndMenu();
         }
 
@@ -96,6 +141,9 @@ void EditorUI::Render(Forge::Scene& scene, const Forge::Camera& camera, EditorSt
         }
 
         if (ImGui::BeginMenu("View")) {
+            if (ImGui::MenuItem("Focus Selected", "F")) {
+                if (cb.OnFocusEntity) cb.OnFocusEntity();
+            }
             if (ImGui::MenuItem("Reset Camera")) cb.OnResetCamera();
             ImGui::EndMenu();
         }
@@ -228,31 +276,35 @@ void EditorUI::Render(Forge::Scene& scene, const Forge::Camera& camera, EditorSt
 
                 ImGui::Spacing();
                 ImGui::TextDisabled("3D Model (.obj):");
-                ImGui::SetNextItemWidth(-1);
-                ImGui::InputText("##ObjPath", m_ObjPathBuf, sizeof(m_ObjPathBuf));
-                if (ImGui::Button("Load .OBJ", ImVec2(-1, 24))) {
-                    e.MeshPath = m_ObjPathBuf;
-                    e.Shape    = Forge::MeshType::Custom;
-                    PushLog(state, "[ASSET] Loaded OBJ: " + e.MeshPath);
+                if (ImGui::Button("Browse .OBJ...", ImVec2(-1, 24))) {
+                    std::string path = Forge::FileDialog::OpenFile("OBJ Models (*.obj)\0*.obj\0All Files (*.*)\0*.*\0");
+                    if (!path.empty()) {
+                        e.MeshPath = path;
+                        e.Shape    = Forge::MeshType::Custom;
+                        std::strncpy(m_ObjPathBuf, path.c_str(), sizeof(m_ObjPathBuf) - 1);
+                        PushLog(state, "[ASSET] Loaded OBJ: " + e.MeshPath);
+                    }
                 }
                 if (!e.MeshPath.empty()) {
-                    ImGui::TextColored(ImVec4(0.55f, 0.85f, 0.55f, 1.0f), "Active: %s", e.MeshPath.c_str());
+                    ImGui::TextWrapped("Active: %s", e.MeshPath.c_str());
                 }
 
                 ImGui::Spacing();
                 ImGui::TextDisabled("Texture (.png / .jpg):");
-                ImGui::SetNextItemWidth(-1);
-                ImGui::InputText("##TexPath", m_TexPathBuf, sizeof(m_TexPathBuf));
-                if (ImGui::Button("Load Texture", ImVec2(150, 24))) {
-                    e.TexturePath = m_TexPathBuf;
-                    PushLog(state, "[ASSET] Loaded Texture: " + e.TexturePath);
+                if (ImGui::Button("Browse Texture...", ImVec2(180, 24))) {
+                    std::string path = Forge::FileDialog::OpenFile("Images (*.png;*.jpg;*.jpeg)\0*.png;*.jpg;*.jpeg\0All Files (*.*)\0*.*\0");
+                    if (!path.empty()) {
+                        e.TexturePath = path;
+                        std::strncpy(m_TexPathBuf, path.c_str(), sizeof(m_TexPathBuf) - 1);
+                        PushLog(state, "[ASSET] Loaded Texture: " + e.TexturePath);
+                    }
                 }
                 ImGui::SameLine();
                 if (ImGui::Button("Clear", ImVec2(-1, 24))) {
                     e.TexturePath.clear();
                 }
                 if (!e.TexturePath.empty()) {
-                    ImGui::TextColored(ImVec4(0.55f, 0.85f, 0.55f, 1.0f), "Active: %s", e.TexturePath.c_str());
+                    ImGui::TextWrapped("Active: %s", e.TexturePath.c_str());
                 }
             }
 
@@ -270,7 +322,7 @@ void EditorUI::Render(Forge::Scene& scene, const Forge::Camera& camera, EditorSt
             ImGui::Separator();
             ImGui::Spacing();
 
-            if (ImGui::Button("Duplicate", ImVec2(-1, 26))) {
+            if (ImGui::Button("Duplicate (Ctrl+D)", ImVec2(-1, 26))) {
                 auto copy = e;
                 copy.Name += "_Copy";
                 copy.TransformData.Position.x += 1.0f;
@@ -282,7 +334,7 @@ void EditorUI::Render(Forge::Scene& scene, const Forge::Camera& camera, EditorSt
             }
 
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.58f, 0.16f, 0.20f, 1.0f));
-            if (ImGui::Button("Delete", ImVec2(-1, 26))) {
+            if (ImGui::Button("Delete (Del)", ImVec2(-1, 26))) {
                 PushLog(state, "[ENTITY] Deleted: " + e.Name);
                 scene.RemoveEntity(static_cast<size_t>(state.SelectedIndex));
                 state.SelectedIndex = -1;
