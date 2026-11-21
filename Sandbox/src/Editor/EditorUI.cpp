@@ -72,7 +72,7 @@ void EditorUI::Render(Forge::Scene& scene, const Forge::Camera& camera, EditorSt
     float barH    = 38.0f;
     float leftW   = 250.0f;
     float rightW  = 300.0f;
-    float bottomH = 170.0f;
+    float bottomH = 175.0f;
 
     // 1. Top Menu Bar
     if (ImGui::BeginMainMenuBar()) {
@@ -364,7 +364,11 @@ void EditorUI::Render(Forge::Scene& scene, const Forge::Camera& camera, EditorSt
                 ImGui::SliderFloat("Camera Speed", &state.CameraSpeed, 1.0f, 15.0f);
                 ImGui::SliderFloat("Sensitivity", &state.MouseSensitivity, 0.05f, 0.5f);
                 ImGui::Checkbox("Checker Texture", &state.World.UseTexture);
-                ImGui::Checkbox("Infinite 3D Grid", &state.ShowGrid);
+                ImGui::SameLine();
+                ImGui::Checkbox("3D Grid", &state.ShowGrid);
+                ImGui::Checkbox("Real-Time Shadows", &state.World.EnableShadows);
+                ImGui::SameLine();
+                ImGui::Checkbox("360 Skybox", &state.World.EnableSkybox);
                 ImGui::Columns(1);
                 ImGui::EndTabItem();
             }
