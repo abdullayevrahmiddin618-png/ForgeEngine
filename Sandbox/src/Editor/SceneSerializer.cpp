@@ -28,7 +28,8 @@ bool SceneSerializer::Save(const std::string& filepath, Forge::Scene& scene, con
             << std::quoted(e.TexturePath) << " "
             << (e.PhysicsEnabled ? 1 : 0) << " "
             << (e.IsStatic ? 1 : 0) << " "
-            << e.Bounciness << "\n";
+            << e.Bounciness << " "
+            << std::quoted(e.ScriptName) << "\n";
     }
 
     return true;
@@ -60,7 +61,7 @@ bool SceneSerializer::Load(const std::string& filepath, Forge::Scene& scene, Wor
                 >> world.AmbientStrength >> world.SpecularStrength >> useTex;
             world.UseTexture = (useTex != 0);
         } else if (tag == "ENTITY") {
-            std::string name, meshPath, texPath;
+            std::string name, meshPath, texPath, scriptName;
             int shapeInt = 0, visInt = 1;
             int physInt = 0, staticInt = 0;
             float bounce = 0.35f;
@@ -75,7 +76,7 @@ bool SceneSerializer::Load(const std::string& filepath, Forge::Scene& scene, Wor
             if (iss >> std::quoted(meshPath)) {
                 iss >> std::quoted(texPath);
                 if (iss >> physInt >> staticInt >> bounce) {
-                    // Fizika ma'lumotlari o'qildi
+                    iss >> std::quoted(scriptName);
                 }
             }
 
@@ -92,6 +93,8 @@ bool SceneSerializer::Load(const std::string& filepath, Forge::Scene& scene, Wor
             e.IsStatic               = (staticInt != 0);
             e.Bounciness             = bounce;
             e.Velocity               = { 0.0f, 0.0f, 0.0f };
+            e.ScriptName             = scriptName;
+            e.ScriptInstance         = nullptr;
         }
     }
 
