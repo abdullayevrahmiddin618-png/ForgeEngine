@@ -21,6 +21,8 @@
 #include "Forge/Renderer/Skybox.h"
 #include "Forge/Renderer/SceneRenderer.h"
 #include "Forge/Scene/Transform.h"
+#include "Forge/Scene/Script.h"
+#include "Forge/Scene/ScriptRegistry.h"
 #include "Forge/Scene/Entity.h"
 #include "Forge/Scene/Scene.h"
 #include "Forge/Physics/PhysicsWorld.h"
