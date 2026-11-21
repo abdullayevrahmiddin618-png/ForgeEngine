@@ -79,6 +79,7 @@ add_library(ForgeEngine STATIC
     src/Renderer/Grid.cpp
     src/Renderer/ObjLoader.cpp
     src/Renderer/SceneRenderer.cpp
+    src/Renderer/Skybox.cpp
     src/Physics/PhysicsWorld.cpp
     src/UI/ImGuiLayer.cpp
 )
