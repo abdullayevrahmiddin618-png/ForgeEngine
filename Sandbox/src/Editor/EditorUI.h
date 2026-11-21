@@ -31,6 +31,7 @@ struct EditorCallbacks {
     std::function<void()> OnPause;
     std::function<void()> OnStop;
     std::function<void()> OnResetCamera;
+    std::function<void()> OnFocusEntity;
     std::function<void()> OnExit;
     std::function<void(const std::string&, Forge::MeshType)> OnAddEntity;
 };
@@ -42,6 +43,7 @@ public:
 
 private:
     void ApplyForgeTheme();
+    void HandleHotkeys(Forge::Scene& scene, EditorState& state, const EditorCallbacks& cb);
     static bool MatchesFilter(const std::string& text, const char* filter);
 
     ViewportGizmo m_Gizmo;
