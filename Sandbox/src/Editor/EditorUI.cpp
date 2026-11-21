@@ -70,24 +70,24 @@ void EditorUI::Render(Forge::Scene& scene, const Forge::Camera& camera, EditorSt
     const ImGuiViewport* vp = ImGui::GetMainViewport();
     float menuH   = 0.0f;
     float barH    = 38.0f;
-    float leftW   = 245.0f;
-    float rightW  = 295.0f;
-    float bottomH = 165.0f;
+    float leftW   = 250.0f;
+    float rightW  = 300.0f;
+    float bottomH = 170.0f;
 
-    // 1. Top Menu
+    // 1. Top Menu Bar
     if (ImGui::BeginMainMenuBar()) {
         menuH = ImGui::GetWindowHeight();
 
-        if (ImGui::BeginMenu("Scene")) {
+        if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("New Scene"))            cb.OnNewScene();
-            if (ImGui::MenuItem("Save (scene.forge)"))   cb.OnSaveScene();
-            if (ImGui::MenuItem("Load (scene.forge)"))   cb.OnLoadScene();
+            if (ImGui::MenuItem("Save Scene"))           cb.OnSaveScene();
+            if (ImGui::MenuItem("Load Scene"))           cb.OnLoadScene();
             ImGui::Separator();
             if (ImGui::MenuItem("Exit", "ESC"))          cb.OnExit();
             ImGui::EndMenu();
         }
 
-        if (ImGui::BeginMenu("Create")) {
+        if (ImGui::BeginMenu("Entity")) {
             if (ImGui::MenuItem("Cube"))    cb.OnAddEntity("Cube", Forge::MeshType::Cube);
             if (ImGui::MenuItem("Sphere"))  cb.OnAddEntity("Sphere", Forge::MeshType::Sphere);
             if (ImGui::MenuItem("Pyramid")) cb.OnAddEntity("Pyramid", Forge::MeshType::Pyramid);
@@ -95,7 +95,7 @@ void EditorUI::Render(Forge::Scene& scene, const Forge::Camera& camera, EditorSt
             ImGui::EndMenu();
         }
 
-        if (ImGui::BeginMenu("Camera")) {
+        if (ImGui::BeginMenu("View")) {
             if (ImGui::MenuItem("Reset Camera")) cb.OnResetCamera();
             ImGui::EndMenu();
         }
@@ -115,15 +115,15 @@ void EditorUI::Render(Forge::Scene& scene, const Forge::Camera& camera, EditorSt
         ImGuiWindowFlags_NoCollapse |
         ImGuiWindowFlags_NoBringToFrontOnFocus;
 
-    // 2. Action Bar
+    // 2. Toolbar
     ImGui::SetNextWindowPos(ImVec2(vp->Pos.x, vp->Pos.y + menuH));
     ImGui::SetNextWindowSize(ImVec2(vp->Size.x, barH));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 6.0f));
-    ImGui::Begin("##ActionBar", nullptr, flags | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar);
+    ImGui::Begin("##Toolbar", nullptr, flags | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar);
     {
-        if (ImGui::Button("Save", ImVec2(55, 24))) cb.OnSaveScene();
+        if (ImGui::Button("Save", ImVec2(58, 24))) cb.OnSaveScene();
         ImGui::SameLine();
-        if (ImGui::Button("Load", ImVec2(55, 24))) cb.OnLoadScene();
+        if (ImGui::Button("Load", ImVec2(58, 24))) cb.OnLoadScene();
 
         ImGui::SameLine(0.0f, 20.0f);
 
@@ -131,7 +131,7 @@ void EditorUI::Render(Forge::Scene& scene, const Forge::Camera& camera, EditorSt
             bool active = (state.ActiveGizmo == mode);
             ImGui::PushStyleColor(ImGuiCol_Button, active
                 ? ImVec4(0.14f, 0.54f, 0.72f, 1.0f) : ImVec4(0.14f, 0.17f, 0.22f, 1.0f));
-            if (ImGui::Button(label, ImVec2(62, 24))) state.ActiveGizmo = mode;
+            if (ImGui::Button(label, ImVec2(64, 24))) state.ActiveGizmo = mode;
             ImGui::PopStyleColor();
         };
 
@@ -167,19 +167,19 @@ void EditorUI::Render(Forge::Scene& scene, const Forge::Camera& camera, EditorSt
     float topY = menuH + barH;
     float midH = vp->Size.y - topY - bottomH;
 
-    // 3. Left Panel: Scene Hierarchy
+    // 3. Left Panel: Hierarchy
     ImGui::SetNextWindowPos(ImVec2(vp->Pos.x, vp->Pos.y + topY));
     ImGui::SetNextWindowSize(ImVec2(leftW, midH));
-    ImGui::Begin("Scene", nullptr, flags);
+    ImGui::Begin("Hierarchy", nullptr, flags);
     {
-        if (ImGui::Button("+ Cube", ImVec2(70, 0)))    cb.OnAddEntity("Cube", Forge::MeshType::Cube);
+        if (ImGui::Button("+ Cube", ImVec2(72, 0)))    cb.OnAddEntity("Cube", Forge::MeshType::Cube);
         ImGui::SameLine();
-        if (ImGui::Button("+ Sphere", ImVec2(70, 0)))  cb.OnAddEntity("Sphere", Forge::MeshType::Sphere);
+        if (ImGui::Button("+ Sphere", ImVec2(72, 0)))  cb.OnAddEntity("Sphere", Forge::MeshType::Sphere);
         ImGui::SameLine();
-        if (ImGui::Button("+ Pyr", ImVec2(70, 0)))     cb.OnAddEntity("Pyramid", Forge::MeshType::Pyramid);
+        if (ImGui::Button("+ Pyr", ImVec2(72, 0)))     cb.OnAddEntity("Pyramid", Forge::MeshType::Pyramid);
 
         ImGui::SetNextItemWidth(-1);
-        ImGui::InputTextWithHint("##Filter", "Qidirish...", m_SearchBuf, sizeof(m_SearchBuf));
+        ImGui::InputTextWithHint("##Filter", "Search entities...", m_SearchBuf, sizeof(m_SearchBuf));
         ImGui::Separator();
 
         auto& entities = scene.GetEntities();
@@ -196,10 +196,10 @@ void EditorUI::Render(Forge::Scene& scene, const Forge::Camera& camera, EditorSt
     }
     ImGui::End();
 
-    // 4. Right Panel: Properties
+    // 4. Right Panel: Inspector
     ImGui::SetNextWindowPos(ImVec2(vp->Pos.x + vp->Size.x - rightW, vp->Pos.y + topY));
     ImGui::SetNextWindowSize(ImVec2(rightW, midH));
-    ImGui::Begin("Properties", nullptr, flags);
+    ImGui::Begin("Inspector", nullptr, flags);
     {
         auto& entities = scene.GetEntities();
         if (state.SelectedIndex >= 0 && state.SelectedIndex < static_cast<int>(entities.size())) {
@@ -230,10 +230,10 @@ void EditorUI::Render(Forge::Scene& scene, const Forge::Camera& camera, EditorSt
                 ImGui::TextDisabled("3D Model (.obj):");
                 ImGui::SetNextItemWidth(-1);
                 ImGui::InputText("##ObjPath", m_ObjPathBuf, sizeof(m_ObjPathBuf));
-                if (ImGui::Button("Load .OBJ", ImVec2(-1, 22))) {
+                if (ImGui::Button("Load .OBJ", ImVec2(-1, 24))) {
                     e.MeshPath = m_ObjPathBuf;
                     e.Shape    = Forge::MeshType::Custom;
-                    PushLog(state, "[OBJ] Model ulandi: " + e.MeshPath);
+                    PushLog(state, "[ASSET] Loaded OBJ: " + e.MeshPath);
                 }
                 if (!e.MeshPath.empty()) {
                     ImGui::TextColored(ImVec4(0.55f, 0.85f, 0.55f, 1.0f), "Active: %s", e.MeshPath.c_str());
@@ -243,12 +243,12 @@ void EditorUI::Render(Forge::Scene& scene, const Forge::Camera& camera, EditorSt
                 ImGui::TextDisabled("Texture (.png / .jpg):");
                 ImGui::SetNextItemWidth(-1);
                 ImGui::InputText("##TexPath", m_TexPathBuf, sizeof(m_TexPathBuf));
-                if (ImGui::Button("Load Texture", ImVec2(145, 22))) {
+                if (ImGui::Button("Load Texture", ImVec2(150, 24))) {
                     e.TexturePath = m_TexPathBuf;
-                    PushLog(state, "[TEX] Tekstura ulandi: " + e.TexturePath);
+                    PushLog(state, "[ASSET] Loaded Texture: " + e.TexturePath);
                 }
                 ImGui::SameLine();
-                if (ImGui::Button("Clear Tex", ImVec2(-1, 22))) {
+                if (ImGui::Button("Clear", ImVec2(-1, 24))) {
                     e.TexturePath.clear();
                 }
                 if (!e.TexturePath.empty()) {
@@ -259,7 +259,7 @@ void EditorUI::Render(Forge::Scene& scene, const Forge::Camera& camera, EditorSt
             if (ImGui::CollapsingHeader("Physics", ImGuiTreeNodeFlags_DefaultOpen)) {
                 ImGui::Checkbox("Enable Physics", &e.PhysicsEnabled);
                 if (e.PhysicsEnabled) {
-                    ImGui::Checkbox("Static (Qimirlamas)", &e.IsStatic);
+                    ImGui::Checkbox("Static Body", &e.IsStatic);
                     if (!e.IsStatic) {
                         ImGui::SliderFloat("Bounciness", &e.Bounciness, 0.0f, 0.95f);
                     }
@@ -270,7 +270,7 @@ void EditorUI::Render(Forge::Scene& scene, const Forge::Camera& camera, EditorSt
             ImGui::Separator();
             ImGui::Spacing();
 
-            if (ImGui::Button("Duplicate", ImVec2(-1, 24))) {
+            if (ImGui::Button("Duplicate", ImVec2(-1, 26))) {
                 auto copy = e;
                 copy.Name += "_Copy";
                 copy.TransformData.Position.x += 1.0f;
@@ -278,23 +278,23 @@ void EditorUI::Render(Forge::Scene& scene, const Forge::Camera& camera, EditorSt
                 auto& ne = scene.CreateEntity(copy.Name);
                 ne = copy;
                 state.SelectedIndex = static_cast<int>(scene.GetEntities().size()) - 1;
-                PushLog(state, "[ENTITY] Nusxalandi: " + copy.Name);
+                PushLog(state, "[ENTITY] Duplicated: " + copy.Name);
             }
 
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.58f, 0.16f, 0.20f, 1.0f));
-            if (ImGui::Button("Delete", ImVec2(-1, 24))) {
-                PushLog(state, "[ENTITY] O'chirildi: " + e.Name);
+            if (ImGui::Button("Delete", ImVec2(-1, 26))) {
+                PushLog(state, "[ENTITY] Deleted: " + e.Name);
                 scene.RemoveEntity(static_cast<size_t>(state.SelectedIndex));
                 state.SelectedIndex = -1;
             }
             ImGui::PopStyleColor();
         } else {
-            ImGui::TextDisabled("Viewport yoki Scene dan obyekt tanlang.");
+            ImGui::TextDisabled("Select an entity from the Viewport or Hierarchy.");
         }
     }
     ImGui::End();
 
-    // 5. Center Panel: 3D Viewport + Raycasting + 3D Gizmo
+    // 5. Center Panel: 3D Viewport
     float vpX = vp->Pos.x + leftW;
     float vpY = vp->Pos.y + topY;
     float vpW = vp->Size.x - leftW - rightW;
@@ -332,7 +332,7 @@ void EditorUI::Render(Forge::Scene& scene, const Forge::Camera& camera, EditorSt
     ImGui::End();
     ImGui::PopStyleVar();
 
-    // 6. Bottom Panel: Console & World Settings
+    // 6. Bottom Panel: Console & Environment
     ImGui::SetNextWindowPos(ImVec2(vp->Pos.x, vp->Pos.y + vp->Size.y - bottomH));
     ImGui::SetNextWindowSize(ImVec2(vp->Size.x, bottomH));
     ImGui::Begin("##BottomPanel", nullptr, flags | ImGuiWindowFlags_NoTitleBar);
@@ -352,7 +352,7 @@ void EditorUI::Render(Forge::Scene& scene, const Forge::Camera& camera, EditorSt
                 ImGui::EndTabItem();
             }
 
-            if (ImGui::BeginTabItem("World & Camera")) {
+            if (ImGui::BeginTabItem("Environment & Camera")) {
                 ImGui::Columns(2, nullptr, false);
                 ImGui::DragFloat3("Light Position", &state.World.LightPos.x, 0.1f);
                 ImGui::ColorEdit3("Light Color", &state.World.LightColor.x);
@@ -364,7 +364,7 @@ void EditorUI::Render(Forge::Scene& scene, const Forge::Camera& camera, EditorSt
                 ImGui::SliderFloat("Camera Speed", &state.CameraSpeed, 1.0f, 15.0f);
                 ImGui::SliderFloat("Sensitivity", &state.MouseSensitivity, 0.05f, 0.5f);
                 ImGui::Checkbox("Checker Texture", &state.World.UseTexture);
-                ImGui::Checkbox("3D Grid (Infinite)", &state.ShowGrid);
+                ImGui::Checkbox("Infinite 3D Grid", &state.ShowGrid);
                 ImGui::Columns(1);
                 ImGui::EndTabItem();
             }
