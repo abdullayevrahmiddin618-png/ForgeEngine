@@ -1,4 +1,5 @@
 #include "EditorApp.h"
+#include "Scripts/PlayerScript.h"
 #include <filesystem>
 
 EditorApp::EditorApp()
@@ -7,6 +8,9 @@ EditorApp::EditorApp()
 
 void EditorApp::OnInit() {
     FE_INFO("Starting ForgeEngine Editor...");
+
+    // Register sample C++ scripts
+    Forge::ScriptRegistry::Register<PlayerScript>("PlayerScript");
 
     ImGuiIO& io = ImGui::GetIO();
     const char* fontPath = "C:/Windows/Fonts/segoeui.ttf";
@@ -20,7 +24,7 @@ void EditorApp::OnInit() {
     m_Framebuffer   = std::make_unique<Forge::Framebuffer>(800, 450);
 
     SetupDefaultScene();
-    EditorUI::PushLog(m_State, "[INIT] ForgeEngine ready. Hotkeys: 1/2/3 (Gizmo), F (Focus), Ctrl+D, Del.");
+    EditorUI::PushLog(m_State, "[INIT] ForgeEngine ready. Press Play to test PlayerScript (WASD + Space).");
 }
 
 void EditorApp::OnUpdate(float dt) {
@@ -37,34 +41,43 @@ void EditorApp::OnUpdate(float dt) {
         m_Camera.SetAspectRatio(static_cast<float>(vpW) / static_cast<float>(vpH));
     }
 
-    auto [mouseX, mouseY] = Forge::Input::GetMousePosition();
-    if (Forge::Input::IsMouseButtonPressed(Forge::Mouse::Right) && (m_State.ViewportHovered || m_IsLooking)) {
-        if (!m_IsLooking) {
+    // Editor camera controls (disabled during Play mode so scripts can control WASD/Camera)
+    if (!m_State.IsPlaying) {
+        auto [mouseX, mouseY] = Forge::Input::GetMousePosition();
+        if (Forge::Input::IsMouseButtonPressed(Forge::Mouse::Right) && (m_State.ViewportHovered || m_IsLooking)) {
+            if (!m_IsLooking) {
+                m_LastMouseX = mouseX;
+                m_LastMouseY = mouseY;
+                m_IsLooking  = true;
+            }
+            float dx = mouseX - m_LastMouseX;
+            float dy = m_LastMouseY - mouseY;
             m_LastMouseX = mouseX;
             m_LastMouseY = mouseY;
-            m_IsLooking  = true;
+            m_Camera.Rotate(dx * m_State.MouseSensitivity, dy * m_State.MouseSensitivity);
+        } else {
+            m_IsLooking = false;
         }
-        float dx = mouseX - m_LastMouseX;
-        float dy = m_LastMouseY - mouseY;
-        m_LastMouseX = mouseX;
-        m_LastMouseY = mouseY;
-        m_Camera.Rotate(dx * m_State.MouseSensitivity, dy * m_State.MouseSensitivity);
-    } else {
-        m_IsLooking = false;
+
+        if (!ImGui::GetIO().WantTextInput && (m_State.ViewportHovered || m_IsLooking)) {
+            float speed = m_State.CameraSpeed * dt;
+            if (Forge::Input::IsKeyPressed(Forge::Key::LeftShift)) speed *= 2.0f;
+            if (Forge::Input::IsKeyPressed(Forge::Key::W)) m_Camera.Move( m_Camera.GetFront() * speed);
+            if (Forge::Input::IsKeyPressed(Forge::Key::S)) m_Camera.Move(-m_Camera.GetFront() * speed);
+            if (Forge::Input::IsKeyPressed(Forge::Key::D)) m_Camera.Move( m_Camera.GetRight() * speed);
+            if (Forge::Input::IsKeyPressed(Forge::Key::A)) m_Camera.Move(-m_Camera.GetRight() * speed);
+            if (Forge::Input::IsKeyPressed(Forge::Key::E)) m_Camera.Move( m_Camera.GetUp()    * speed);
+            if (Forge::Input::IsKeyPressed(Forge::Key::Q)) m_Camera.Move(-m_Camera.GetUp()    * speed);
+        }
     }
 
-    if (!ImGui::GetIO().WantTextInput && (m_State.ViewportHovered || m_IsLooking)) {
-        float speed = m_State.CameraSpeed * dt;
-        if (Forge::Input::IsKeyPressed(Forge::Key::LeftShift)) speed *= 2.0f;
-        if (Forge::Input::IsKeyPressed(Forge::Key::W)) m_Camera.Move( m_Camera.GetFront() * speed);
-        if (Forge::Input::IsKeyPressed(Forge::Key::S)) m_Camera.Move(-m_Camera.GetFront() * speed);
-        if (Forge::Input::IsKeyPressed(Forge::Key::D)) m_Camera.Move( m_Camera.GetRight() * speed);
-        if (Forge::Input::IsKeyPressed(Forge::Key::A)) m_Camera.Move(-m_Camera.GetRight() * speed);
-        if (Forge::Input::IsKeyPressed(Forge::Key::E)) m_Camera.Move( m_Camera.GetUp()    * speed);
-        if (Forge::Input::IsKeyPressed(Forge::Key::Q)) m_Camera.Move(-m_Camera.GetUp()    * speed);
-    }
-
+    // Run C++ Scripts + Physics in Play mode
     if (m_State.IsPlaying && !m_State.IsPaused) {
+        for (auto& entity : m_Scene.GetEntities()) {
+            if (entity.ScriptInstance) {
+                entity.ScriptInstance->OnUpdate(dt);
+            }
+        }
         Forge::PhysicsWorld::Step(m_Scene, dt);
     }
 
@@ -101,9 +114,18 @@ void EditorApp::OnImGuiRender() {
     cb.OnPlay = [this]() {
         if (!m_State.IsPlaying) {
             SceneSerializer::Save(".play_backup.forge", m_Scene, m_State.World);
+            for (auto& entity : m_Scene.GetEntities()) {
+                if (!entity.ScriptName.empty()) {
+                    entity.ScriptInstance = Forge::ScriptRegistry::Create(entity.ScriptName);
+                    if (entity.ScriptInstance) {
+                        entity.ScriptInstance->Bind(&entity, &m_Scene, &m_Camera);
+                        entity.ScriptInstance->OnCreate();
+                    }
+                }
+            }
             m_State.IsPlaying = true;
             m_State.IsPaused  = false;
-            EditorUI::PushLog(m_State, "[PLAY] Physics simulation started.");
+            EditorUI::PushLog(m_State, "[PLAY] Simulation & scripts started.");
         } else {
             m_State.IsPaused = false;
         }
@@ -116,9 +138,16 @@ void EditorApp::OnImGuiRender() {
     };
     cb.OnStop = [this]() {
         if (m_State.IsPlaying) {
+            for (auto& entity : m_Scene.GetEntities()) {
+                if (entity.ScriptInstance) {
+                    entity.ScriptInstance->OnDestroy();
+                    entity.ScriptInstance.reset();
+                }
+            }
             m_State.IsPlaying = false;
             m_State.IsPaused  = false;
             SceneSerializer::Load(".play_backup.forge", m_Scene, m_State.World);
+            ResetCamera();
             EditorUI::PushLog(m_State, "[STOP] Scene restored to pre-play state.");
         }
     };
@@ -150,28 +179,29 @@ void EditorApp::SetupDefaultScene() {
     auto& floor = m_Scene.CreateEntity("Floor");
     floor.Shape                  = Forge::MeshType::Plane;
     floor.TransformData.Position = { 0.0f, -0.5f, 0.0f };
-    floor.TransformData.Scale    = { 10.0f, 1.0f, 10.0f };
+    floor.TransformData.Scale    = { 14.0f, 1.0f, 14.0f };
     floor.Color                  = { 0.45f, 0.50f, 0.55f };
     floor.PhysicsEnabled         = true;
     floor.IsStatic               = true;
 
-    auto& cube = m_Scene.CreateEntity("MainCube");
-    cube.Shape                  = Forge::MeshType::Cube;
-    cube.TransformData.Position = { -1.5f, 2.2f, 0.0f };
-    cube.Color                  = { 0.95f, 0.45f, 0.30f };
-    cube.PhysicsEnabled         = true;
-    cube.Bounciness             = 0.45f;
+    auto& player = m_Scene.CreateEntity("Player");
+    player.Shape                  = Forge::MeshType::Cube;
+    player.TransformData.Position = { 0.0f, 1.5f, 0.0f };
+    player.Color                  = { 0.25f, 0.78f, 0.96f };
+    player.PhysicsEnabled         = true;
+    player.Bounciness             = 0.15f;
+    player.ScriptName             = "PlayerScript";
 
     auto& sphere = m_Scene.CreateEntity("Sphere");
     sphere.Shape                  = Forge::MeshType::Sphere;
-    sphere.TransformData.Position = { 0.0f, 3.2f, 0.0f };
-    sphere.Color                  = { 0.30f, 0.70f, 1.00f };
+    sphere.TransformData.Position = { -2.2f, 3.0f, -1.5f };
+    sphere.Color                  = { 0.95f, 0.45f, 0.30f };
     sphere.PhysicsEnabled         = true;
     sphere.Bounciness             = 0.70f;
 
     auto& pyramid = m_Scene.CreateEntity("Pyramid");
     pyramid.Shape                  = Forge::MeshType::Pyramid;
-    pyramid.TransformData.Position = { 1.5f, 1.8f, 0.0f };
+    pyramid.TransformData.Position = { 2.2f, 1.8f, -1.5f };
     pyramid.Color                  = { 0.95f, 0.80f, 0.25f };
     pyramid.PhysicsEnabled         = true;
     pyramid.Bounciness             = 0.25f;
@@ -180,8 +210,8 @@ void EditorApp::SetupDefaultScene() {
 }
 
 void EditorApp::ResetCamera() {
-    m_Camera.SetPosition({ 0.0f, 2.2f, 6.5f });
-    m_Camera.SetRotation(-90.0f, -16.0f);
+    m_Camera.SetPosition({ 0.0f, 2.5f, 6.5f });
+    m_Camera.SetRotation(-90.0f, -18.0f);
 }
 
 void EditorApp::AddEntity(const std::string& baseName, Forge::MeshType type) {
