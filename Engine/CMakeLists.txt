@@ -68,6 +68,7 @@ add_library(ForgeEngine STATIC
     src/Core/Log.cpp
     src/Core/Window.cpp
     src/Core/Application.cpp
+    src/Core/FileDialog.cpp
     src/Input/Input.cpp
     src/Renderer/Renderer.cpp
     src/Renderer/Shader.cpp
@@ -92,4 +93,5 @@ target_include_directories(ForgeEngine
 target_link_libraries(ForgeEngine
     PUBLIC glm::glm imgui
     PRIVATE glfw glad
+    comdlg32
 )
