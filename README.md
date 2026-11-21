@@ -2,12 +2,23 @@
 
 ![C++20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)
 ![CMake](https://img.shields.io/badge/Build-CMake-064F8C.svg)
-![OpenGL](https://img.shields.io/badge/Graphics-OpenGL-5586A4.svg)
+![OpenGL](https://img.shields.io/badge/Graphics-OpenGL%203.3-5586A4.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
-**ForgeEngine** is an open-source 2D & 3D Game Engine built from scratch in modern C++20.
+**ForgeEngine** is an open-source 3D Game Engine & Editor built from scratch in modern **C++20**.
 
-Designed with clean, modular architecture, ForgeEngine aims to give developers full control over rendering, scenes, physics, and tooling — starting from a lightweight core and scaling up to a full game development environment.
+Designed with a clean, modular architecture (`Engine` static library + `Sandbox` editor/game layer), ForgeEngine gives developers direct control over 3D rendering, real-time shadows, physics, native C++ scripting, and scene tooling.
+
+---
+
+## ✨ Key Features
+
+- **3D Rendering (`SceneRenderer`):** OpenGL 3.3 Core pipeline with Phong lighting, **2048×2048 PCF Real-Time Shadow Mapping**, **360° Procedural Skybox**, and an **Infinite 3D Grid**.
+- **3D Models & Textures:** Built-in primitives (Cube, Sphere, Pyramid, Plane), custom `.obj` mesh loader, and `.png`/`.jpg` texture loading via `stb_image` and native Windows File Dialog (`Browse...`).
+- **Forge Physics:** Built-in AABB collision detection, gravity, static/dynamic bodies, and configurable bounciness.
+- **Native C++ Scripting:** Extensible `Forge::Script` & `Forge::ScriptRegistry` system (`OnCreate`, `OnUpdate`, `OnDestroy`) with a sample `PlayerScript` (WASD movement, jumping, and smooth camera follow).
+- **Integrated 3D Editor:** Dear ImGui interface with clean `Segoe UI` typography, Framebuffer-based 3D Viewport, mouse raycasting selection, interactive **3D Gizmos (Move, Rotate, Scale)**, Hierarchy, Inspector, Console, and Play/Pause/Stop simulation with automatic scene state backup/restore.
+- **Scene Serialization:** Save and load full scenes (entities, transforms, models, textures, physics, scripts, and lighting) to `.forge` files.
 
 ---
 
@@ -15,40 +26,50 @@ Designed with clean, modular architecture, ForgeEngine aims to give developers f
 
 | Technology | Purpose |
 | :--- | :--- |
-| **C++20** | Core engine language |
+| **C++20** | Core engine & native scripting language |
 | **CMake** | Cross-platform build system |
-| **OpenGL** | Initial graphics API (Vulkan planned) |
+| **OpenGL 3.3 Core** | Graphics API |
 | **GLFW** | Window creation & input handling |
 | **GLAD** | OpenGL function loader |
 | **GLM** | 3D/2D math library |
-| **Dear ImGui** | Integrated editor & debug UI |
+| **Dear ImGui** | Integrated 3D Editor UI |
+| **stb_image** | Image & texture loading |
 
 ---
 
 ## 🗺️ Roadmap
 
-### Phase 1 — Foundation (Current)
-- [X] CMake project setup (`Engine` library + `Sandbox` app)
-- [X] Core Application loop & Entry point
-- [X] Logging system
-- [X] Window management (GLFW) & Event system
-- [X] OpenGL context initialization (GLAD)
+### Phase 1 — Foundation
+- [x] CMake project setup (`Engine` library + `Sandbox` editor)
+- [x] Core Application loop & Entry point
+- [x] Logging system & Input manager
+- [x] Window management (GLFW) & OpenGL context (GLAD)
+- [x] Native Windows File Dialog (`FileDialog`)
 
-### Phase 2 — Rendering
-- [ ] Shader & Buffer abstraction (VBO, VAO, IBO)
-- [ ] 2D Renderer (Sprites, Textures, Batch Rendering)
-- [ ] Camera system (Orthographic & Perspective)
-- [ ] 3D Renderer (Meshes, Lighting, Materials)
+### Phase 2 — 3D Rendering
+- [x] Shader, VertexArray, Framebuffer & Texture abstractions
+- [x] Perspective Camera & Infinite 3D Grid
+- [x] Modular `SceneRenderer` with `.obj` model & texture caching
+- [x] Real-Time Shadow Mapping (2048×2048 PCF)
+- [x] 360° Procedural Skybox
+- [ ] Multiple Point & Spot Lights
+- [ ] PBR Materials & `.glTF` skeletal animation
 
 ### Phase 3 — Engine Systems
-- [ ] Entity Component System (ECS)
-- [ ] Scene management & Serialization
-- [ ] Asset manager
-- [ ] Physics & Audio integration
+- [x] Scene & Entity management
+- [x] Scene Serialization (`scene.forge`)
+- [x] `Forge Physics` v1 (Gravity, AABB collisions, static/dynamic bodies)
+- [x] Native C++ Scripting (`Script` & `ScriptRegistry`)
+- [ ] `Forge Physics` v2 (Raycasts, Trigger zones, Capsule colliders)
+- [ ] Audio system & In-Game HUD layer
 
 ### Phase 4 — Editor & Export
-- [ ] Dear ImGui docking editor (Viewport, Hierarchy, Inspector)
-- [ ] Project & Build export tools
+- [x] Dear ImGui 3D Editor (Viewport, Hierarchy, Inspector, Console)
+- [x] Mouse Raycasting & 3D Gizmos (Move, Rotate, Scale)
+- [x] Play / Pause / Stop simulation with scene backup
+- [x] Editor Hotkeys (`1/2/3`, `Ctrl+S`, `Ctrl+D`, `Delete`, `F`)
+- [ ] Content Browser (Asset Panel) & Undo/Redo
+- [ ] Standalone Runtime Export (`Game.exe`)
 
 ---
 
@@ -56,12 +77,15 @@ Designed with clean, modular architecture, ForgeEngine aims to give developers f
 
 ```text
 ForgeEngine/
-├── Engine/             # Core engine static library
-│   ├── include/        # Public headers
-│   └── src/            # Engine source files
-├── Sandbox/            # Test application / Game project
-├── Assets/             # Shaders, textures, models
-├── CMakeLists.txt      # Root CMake configuration
+├── Engine/                     # Core engine static library
+│   ├── include/Forge/          # Public headers (Core, Input, Physics, Renderer, Scene)
+│   └── src/                    # Engine implementation files
+├── Sandbox/                    # 3D Editor & sample game scripts
+│   └── src/
+│       ├── Editor/             # EditorUI, ViewportGizmo, SceneSerializer
+│       └── Scripts/            # Sample C++ scripts (PlayerScript.h)
+├── Assets/                     # Models, textures, and scenes
+├── CMakeLists.txt              # Root CMake configuration
 ├── .gitignore
 ├── LICENSE
 └── README.md
