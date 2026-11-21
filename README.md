@@ -89,3 +89,22 @@ ForgeEngine/
 ├── .gitignore
 ├── LICENSE
 └── README.md
+
+🚀 Building & Running (Windows / MinGW)
+cmake -B build -G "MinGW Makefiles" "-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
+cmake --build build -j
+.\build\bin\Sandbox.exe
+
+🎮 Editor Controls
+| Control | Action |
+|---|---|
+| RMB + WASD / Q / E | Fly camera in Viewport (hold Shift for 2× speed) |
+| LMB Click | Select entity in Viewport |
+| 1 / 2 / 3 | Switch Gizmo mode (Move / Rotate / Scale) |
+| F | Focus camera on selected entity |
+| Ctrl + D | Duplicate selected entity |
+| Delete | Delete selected entity |
+| Ctrl + S | Save scene (scene.forge) |
+| ESC | Exit editor |
+📄 License
+This project is licensed under the MIT License — see the LICENSE file for details.
