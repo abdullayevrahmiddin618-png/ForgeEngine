@@ -17,6 +17,7 @@
 #include "Forge/Renderer/Renderer.h"
 #include "Forge/Renderer/Framebuffer.h"
 #include "Forge/Renderer/Grid.h"
+#include "Forge/Renderer/SceneRenderer.h"
 #include "Forge/Scene/Transform.h"
 #include "Forge/Scene/Entity.h"
 #include "Forge/Scene/Scene.h"
