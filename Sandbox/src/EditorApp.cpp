@@ -8,7 +8,6 @@ EditorApp::EditorApp()
 void EditorApp::OnInit() {
     FE_INFO("Starting ForgeEngine Editor...");
 
-    // Load clean Windows system font (Segoe UI)
     ImGuiIO& io = ImGui::GetIO();
     const char* fontPath = "C:/Windows/Fonts/segoeui.ttf";
     if (std::filesystem::exists(fontPath)) {
@@ -21,7 +20,7 @@ void EditorApp::OnInit() {
     m_Framebuffer   = std::make_unique<Forge::Framebuffer>(800, 450);
 
     SetupDefaultScene();
-    EditorUI::PushLog(m_State, "[INIT] ForgeEngine ready. Controls: RMB + WASD/QE in Viewport.");
+    EditorUI::PushLog(m_State, "[INIT] ForgeEngine ready. Hotkeys: 1/2/3 (Gizmo), F (Focus), Ctrl+D, Del.");
 }
 
 void EditorApp::OnUpdate(float dt) {
@@ -69,7 +68,6 @@ void EditorApp::OnUpdate(float dt) {
         Forge::PhysicsWorld::Step(m_Scene, dt);
     }
 
-    // Render 3D scene into Viewport Framebuffer
     m_Framebuffer->Bind();
     m_SceneRenderer->Render(m_Scene, m_Camera, m_State.World, m_State.ShowGrid);
     m_Framebuffer->Unbind();
@@ -127,6 +125,13 @@ void EditorApp::OnImGuiRender() {
     cb.OnResetCamera = [this]() {
         ResetCamera();
         EditorUI::PushLog(m_State, "[CAMERA] Camera reset.");
+    };
+    cb.OnFocusEntity = [this]() {
+        const auto& entities = m_Scene.GetEntities();
+        if (m_State.SelectedIndex >= 0 && m_State.SelectedIndex < static_cast<int>(entities.size())) {
+            const auto& pos = entities[m_State.SelectedIndex].TransformData.Position;
+            m_Camera.SetPosition(pos - m_Camera.GetFront() * 4.5f);
+        }
     };
     cb.OnExit = [this]() { Close(); };
     cb.OnAddEntity = [this](const std::string& name, Forge::MeshType type) {
